@@ -301,7 +301,7 @@ kbd{font-family:inherit}
       <img src="Logo-3.png" alt="The Ant Adventures" style="width:100px;height:auto;display:block">
     </div>
     <div style="text-align:center;font-size:9px;color:rgba(255,255,255,0.55);letter-spacing:0.8px;font-style:italic;line-height:1.4;margin-bottom:5px">Where Authentic Adventure Begins</div>
-    <div class="sb-sub" style="text-align:center">CRM System · v5.9</div>
+    <div class="sb-sub" style="text-align:center">CRM System · v6.0</div>
   </div>
   <div class="sb-sec" data-en="Sales &amp; Product" data-vi="Bán hàng &amp; Sản phẩm">Sales &amp; Product</div>
   <div class="sbi on" data-page="dashboard">◈ <span data-en="Dashboard" data-vi="Bảng điều hành">Dashboard</span> <span class="sb-badge">CEO</span></div>
@@ -16633,7 +16633,7 @@ function trShowView(name) {
     const el = document.getElementById('tr-view-' + v);
     if (el) el.style.display = (v === name) ? '' : 'none';
   });
-  applyLanguage(currentLang);
+  applyLang(currentLang);
 }
 
 // ── ENTRY POINT ────────────────────────────────────────────────────────────
@@ -16747,7 +16747,7 @@ function renderTrRoster() {
 
     heroEl.innerHTML = html;
     heroEl.style.display = '';
-    applyLanguage(currentLang);
+    applyLang(currentLang);
     return;
   }
 
@@ -16845,7 +16845,7 @@ function renderTrRoster() {
   ovHtml += `</div>`;
   overviewEl.innerHTML = ovHtml;
 
-  applyLanguage(currentLang);
+  applyLang(currentLang);
 }
 
 // ── ADD / EDIT / DELETE TRAINEE ────────────────────────────────────────────
@@ -16984,7 +16984,7 @@ function renderTrDetail() {
   wkHtml += `</div></div>`;
   wk.innerHTML = wkHtml;
 
-  applyLanguage(currentLang);
+  applyLang(currentLang);
 }
 
 function trMarkCertified(tid) {
@@ -17096,7 +17096,7 @@ function renderTrDay() {
   `;
 
   if (report.completed && !report.quizPassed) trRenderQuiz();
-  applyLanguage(currentLang);
+  applyLang(currentLang);
 }
 
 function trSaveReport() {
@@ -17218,7 +17218,7 @@ function renderTrWeek(week) {
       <button class="btn btn-p" onclick="trApproveWeekly(${week})" ${wk.supervisorApproved?'disabled':''}>${wk.supervisorApproved?(currentLang==='vi'?'✓ Đã duyệt':'✓ Approved'):(currentLang==='vi'?'✓ Duyệt tuần':'✓ Approve Week')}</button>
     </div>
   `;
-  applyLanguage(currentLang);
+  applyLang(currentLang);
 }
 
 function trSaveWeekly(week) {
@@ -17280,7 +17280,7 @@ function renderTrCurric() {
     }
   }
   el.innerHTML = html;
-  applyLanguage(currentLang);
+  applyLang(currentLang);
 }
 
 // ── END STAFF TRAINING ACADEMY ─────────────────────────────────────────────
