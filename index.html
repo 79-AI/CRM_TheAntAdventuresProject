@@ -301,7 +301,7 @@ kbd{font-family:inherit}
       <img src="Logo-3.png" alt="The Ant Adventures" style="width:100px;height:auto;display:block">
     </div>
     <div style="text-align:center;font-size:9px;color:rgba(255,255,255,0.55);letter-spacing:0.8px;font-style:italic;line-height:1.4;margin-bottom:5px">Where Authentic Adventure Begins</div>
-    <div class="sb-sub" style="text-align:center">CRM System · v6.0</div>
+    <div class="sb-sub" style="text-align:center">CRM System · v6.1</div>
   </div>
   <div class="sb-sec" data-en="Sales &amp; Product" data-vi="Bán hàng &amp; Sản phẩm">Sales &amp; Product</div>
   <div class="sbi on" data-page="dashboard">◈ <span data-en="Dashboard" data-vi="Bảng điều hành">Dashboard</span> <span class="sb-badge">CEO</span></div>
@@ -17249,31 +17249,457 @@ function trViewCurriculum() {
   renderTrCurric();
 }
 
-function renderTrCurric() {
-  const el = document.getElementById('tr-curric-content');
-  let html = `<div class="card" style="padding:18px;margin-bottom:14px">
-    <h2 style="margin:0;font-family:'DM Serif Display',Georgia,serif;color:var(--gd);font-size:22px" data-en="📚 Curriculum Library — 25 Days" data-vi="📚 Thư viện chương trình — 25 ngày">📚 Curriculum Library — 25 Days</h2>
-    <div style="color:var(--m);font-size:12.5px;margin-top:5px" data-en="Read-only reference. Use this to brief new hires, share with team, or refresh your own knowledge." data-vi="Tham khảo chỉ đọc. Dùng để brief nhân viên mới, chia sẻ team, hoặc làm mới kiến thức bản thân.">Read-only reference. Use this to brief new hires, share with team, or refresh your own knowledge.</div>
+// ── INFOGRAPHIC WIDGETS (Tier 2) — one per content-heavy day ───────────────
+// Each returns an HTML string. Pulls real CRM data (AA_PRODUCTS, AA_HOTELS,
+// SEED_AGENTS, SEED_GUIDES) where applicable.
+
+// Day 3 — Vietnam regions + weather matrix
+function trWidgetWeather() {
+  const months = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+  // 0=avoid 1=ok 2=best
+  const weather = {
+    'North':   [2,2,1,1,1,0,0,0,1,2,2,2],
+    'Central': [1,2,2,2,2,1,1,1,0,0,0,1],
+    'South':   [2,2,2,2,1,1,1,1,1,1,2,2]
+  };
+  const colors = ['#FECDD3','#FEF3C7','#DCFCE7']; // red-ish, amber, green
+  const labels = [{en:'Avoid',vi:'Tránh'},{en:'OK',vi:'OK'},{en:'Best',vi:'Tốt nhất'}];
+  let h = `<div style="background:#F7F8F6;border-radius:9px;padding:14px;margin-top:10px">
+    <div style="font-weight:600;color:var(--gd);font-size:12.5px;margin-bottom:10px" data-en="🌦️ Vietnam Travel Weather by Region & Month" data-vi="🌦️ Thời tiết du lịch theo vùng & tháng">🌦️ Vietnam Travel Weather by Region & Month</div>
+    <div style="display:grid;grid-template-columns:80px repeat(12,1fr);gap:3px;font-size:10px;text-align:center;align-items:center">
+      <div></div>${months.map(m=>`<div style="font-weight:600;color:var(--m)">${m}</div>`).join('')}`;
+  for (const [region, arr] of Object.entries(weather)) {
+    h += `<div style="font-weight:600;color:var(--gd);text-align:left;font-size:11px">${region}</div>`;
+    arr.forEach(v => { h += `<div style="background:${colors[v]};border-radius:4px;padding:7px 2px;font-weight:600">${['✗','~','✓'][v]}</div>`; });
+  }
+  h += `</div><div style="margin-top:10px;display:flex;gap:14px;font-size:10.5px;color:var(--m)">
+    ${labels.map((l,i)=>`<div><span style="display:inline-block;width:14px;height:10px;background:${colors[i]};border-radius:3px;vertical-align:middle;margin-right:4px"></span><span data-en="${l.en}" data-vi="${l.vi}">${l.en}</span></div>`).join('')}
+  </div></div>`;
+  return h;
+}
+
+// Day 4 — Source markets infographic (5 country cards)
+function trWidgetMarkets() {
+  const markets = [
+    {flag:'🇺🇸',name:'USA',          dur:'10-14d', budget:'$$$',  style:'Direct, warm, tip-friendly',     styleVi:'Trực tiếp, ấm áp, hay tip'},
+    {flag:'🇫🇷',name:'France',       dur:'14-21d', budget:'$$$',  style:'Formal, culture+food, slow pace',  styleVi:'Trang trọng, văn hóa+ẩm thực, nhịp chậm'},
+    {flag:'🇦🇺',name:'Australia',    dur:'7-14d',  budget:'$$',   style:'Active, informal, value-conscious',styleVi:'Năng động, thoải mái, để ý giá trị'},
+    {flag:'🇬🇧',name:'UK',           dur:'10-14d', budget:'$$$',  style:'Refined, polite reserved',         styleVi:'Tinh tế, lịch sự kín đáo'},
+    {flag:'🇩🇪',name:'Germany',      dur:'14-21d', budget:'$$',   style:'Planners, punctual, efficiency',   styleVi:'Lên kế hoạch kỹ, đúng giờ, hiệu quả'}
+  ];
+  return `<div style="margin-top:10px"><div style="font-weight:600;color:var(--gd);font-size:12.5px;margin-bottom:10px" data-en="🌍 The 5 Core Markets at a Glance" data-vi="🌍 Tổng quan 5 thị trường chính">🌍 The 5 Core Markets at a Glance</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
+      ${markets.map(m => `<div style="background:#fff;border:1px solid var(--b);border-radius:8px;padding:11px;text-align:center">
+        <div style="font-size:32px;line-height:1">${m.flag}</div>
+        <div style="font-weight:700;color:var(--gd);margin-top:4px;font-size:13px">${m.name}</div>
+        <div style="font-size:10.5px;color:var(--m);margin-top:4px">${m.dur} · ${m.budget}</div>
+        <div style="font-size:10.5px;color:#3a4a40;margin-top:6px;line-height:1.35" data-en="${m.style}" data-vi="${m.styleVi}">${m.style}</div>
+      </div>`).join('')}
+    </div></div>`;
+}
+
+// Day 5 — Standard hotel roster + flight route
+function trWidgetHotelsFlights() {
+  const roster = [
+    {city:'Hanoi',     hotel:'La Siesta Ma May Hanoi',        tier:'Boutique 4★'},
+    {city:'Halong',    hotel:'Bhaya Cruise',                  tier:'Premium Cruise'},
+    {city:'Ninh Binh', hotel:'Ninh Binh Hidden Charm',        tier:'Boutique 4★'},
+    {city:'Hue',       hotel:'Medallion Hue',                 tier:'Boutique 4★'},
+    {city:'Hoi An',    hotel:'Allegro Hoi An',                tier:'Boutique 4★'},
+    {city:'HCMC',      hotel:'La Siesta Premium Saigon',      tier:'Premium 5★'},
+    {city:'Can Tho',   hotel:'Charmant Suite Can Tho',        tier:'Boutique 4★'}
+  ];
+  let h = `<div style="margin-top:10px">
+    <div style="font-weight:600;color:var(--gd);font-size:12.5px;margin-bottom:10px" data-en="🏨 The 7 Standard Hotels (memorize)" data-vi="🏨 7 Khách sạn chuẩn (học thuộc)">🏨 The 7 Standard Hotels (memorize)</div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:14px">
+      ${roster.map((r,i) => `<div style="background:linear-gradient(180deg,#fff 0%,#E8F5EE 100%);border:1px solid var(--b);border-top:3px solid #2E7D52;border-radius:7px;padding:10px 8px;text-align:center">
+        <div style="font-size:10px;color:var(--m);font-weight:600;letter-spacing:0.4px;text-transform:uppercase">${r.city}</div>
+        <div style="font-weight:700;color:var(--gd);font-size:11.5px;margin-top:4px;line-height:1.25">${r.hotel}</div>
+        <div style="background:#C9A84C;color:#fff;padding:2px 6px;border-radius:7px;font-size:9.5px;font-weight:600;display:inline-block;margin-top:6px">${r.tier}</div>
+      </div>`).join('')}
+    </div>
+    <div style="font-weight:600;color:var(--gd);font-size:12.5px;margin-bottom:10px" data-en="✈️ Standard Domestic Flights" data-vi="✈️ Chuyến bay nội địa chuẩn">✈️ Standard Domestic Flights</div>
+    <div style="background:#fff;border:1px solid var(--b);border-radius:8px;padding:14px;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;font-size:13px">
+      <div style="display:flex;align-items:center;gap:8px"><span style="background:#1565C0;color:#fff;padding:5px 10px;border-radius:7px;font-weight:700;font-size:12px">HAN</span><span style="color:var(--m)">⟶</span><span style="background:#fff;border:1px dashed var(--b);padding:3px 8px;border-radius:7px;font-size:11px;color:var(--m)" data-en="Day 5" data-vi="Ngày 5">Day 5</span><span style="color:var(--m)">⟶</span><span style="background:#1565C0;color:#fff;padding:5px 10px;border-radius:7px;font-weight:700;font-size:12px">HUI</span></div>
+      <span style="color:var(--b);font-size:18px">·</span>
+      <div style="display:flex;align-items:center;gap:8px"><span style="background:#6B21A8;color:#fff;padding:5px 10px;border-radius:7px;font-weight:700;font-size:12px">DAD</span><span style="color:var(--m)">⟶</span><span style="background:#fff;border:1px dashed var(--b);padding:3px 8px;border-radius:7px;font-size:11px;color:var(--m)" data-en="Day 9" data-vi="Ngày 9">Day 9</span><span style="color:var(--m)">⟶</span><span style="background:#6B21A8;color:#fff;padding:5px 10px;border-radius:7px;font-weight:700;font-size:12px">SGN</span></div>
+    </div>
   </div>`;
-  for (let w = 1; w <= 5; w++) {
-    const weekTitles = {1:{en:'Foundations',vi:'Nền tảng'},2:{en:'Sales Mastery',vi:'Bán hàng'},3:{en:'Pricing & AI',vi:'Định giá & AI'},4:{en:'Vietnam Depth & Ops',vi:'Việt Nam sâu & Vận hành'},5:{en:'Drills & Certification',vi:'Diễn tập & Chứng nhận'}};
-    html += `<div style="font-family:'DM Serif Display',Georgia,serif;color:var(--gd);font-size:18px;margin:20px 0 10px 0">Week ${w} · ${trLang(weekTitles[w])}</div>`;
-    for (let d = (w-1)*5+1; d <= w*5; d++) {
-      const day = TR_CURRICULUM[d-1];
-      html += `<div class="card" style="padding:14px;margin-bottom:10px">
-        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;gap:10px">
-          <div>
-            <span style="background:#2E7D52;color:#fff;padding:2px 9px;border-radius:11px;font-size:11px;font-weight:600;margin-right:8px">Day ${day.day}</span>
-            <strong style="color:var(--gd);font-size:14px">${trEsc(trLang(day.title))}</strong>
+  return h;
+}
+
+// Day 6 — Pipeline 7-stage flowchart
+function trWidgetPipeline() {
+  const stages = [
+    {en:'New Lead',vi:'Lead mới',c:'#6B7F74'},
+    {en:'Designing',vi:'Thiết kế',c:'#C9A84C'},
+    {en:'Quote Sent',vi:'Đã báo giá',c:'#D97706'},
+    {en:'Negotiating',vi:'Thương lượng',c:'#1565C0'},
+    {en:'Confirmed',vi:'Đã chốt',c:'#2E7D52'},
+    {en:'Completed',vi:'Hoàn thành',c:'#5AA87A'}
+  ];
+  let h = `<div style="margin-top:10px"><div style="font-weight:600;color:var(--gd);font-size:12.5px;margin-bottom:10px" data-en="🔄 7-Stage Pipeline Flow" data-vi="🔄 Luồng pipeline 7 giai đoạn">🔄 7-Stage Pipeline Flow</div>
+    <div style="display:flex;align-items:center;gap:4px;overflow-x:auto;padding-bottom:6px">`;
+  stages.forEach((s,i) => {
+    h += `<div style="background:${s.c};color:#fff;padding:8px 12px;border-radius:7px;font-size:11px;font-weight:600;flex-shrink:0;text-align:center;min-width:90px"><div style="font-size:9.5px;opacity:0.85">${i+1}</div><span data-en="${s.en}" data-vi="${s.vi}">${s.en}</span></div>`;
+    if (i < stages.length-1) h += `<span style="color:var(--m);font-size:14px">→</span>`;
+  });
+  h += `</div>
+    <div style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:11px;color:var(--m)">
+      <span style="font-size:14px">↳</span>
+      <span data-en="Branch: any stage can move to" data-vi="Nhánh: mọi giai đoạn có thể chuyển sang">Branch: any stage can move to</span>
+      <span style="background:#C0392B;color:#fff;padding:3px 9px;border-radius:7px;font-size:10.5px;font-weight:600" data-en="Lost" data-vi="Lost">Lost</span>
+    </div></div>`;
+  return h;
+}
+
+// Day 10 — Products mini-grid from AA_PRODUCTS
+function trWidgetProductsGrid() {
+  if (typeof AA_PRODUCTS === 'undefined' || !AA_PRODUCTS.length) return '';
+  // Take 12 representative products mixing regions
+  const sample = [];
+  ['north','central','south'].forEach(reg => {
+    AA_PRODUCTS.filter(p => p.region === reg).slice(0, 4).forEach(p => sample.push(p));
+  });
+  const total = AA_PRODUCTS.length;
+  const byRegion = {north:0,central:0,south:0,services:0};
+  AA_PRODUCTS.forEach(p => { if (byRegion[p.region]!==undefined) byRegion[p.region]++; });
+  return `<div style="margin-top:10px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+      <div style="font-weight:600;color:var(--gd);font-size:12.5px" data-en="📦 Live Product Library (${total} total)" data-vi="📦 Thư viện sản phẩm (${total} tổng cộng)">📦 Live Product Library (${total} total)</div>
+      <div style="display:flex;gap:6px;font-size:10.5px">
+        <span style="background:#E8F5EE;color:#2E7D52;padding:3px 8px;border-radius:7px;font-weight:600">North ${byRegion.north}</span>
+        <span style="background:#FDF6E3;color:#C9A84C;padding:3px 8px;border-radius:7px;font-weight:600">Central ${byRegion.central}</span>
+        <span style="background:#FCE7F3;color:#6B21A8;padding:3px 8px;border-radius:7px;font-weight:600">South ${byRegion.south}</span>
+        <span style="background:#E0F2FE;color:#1565C0;padding:3px 8px;border-radius:7px;font-weight:600">Services ${byRegion.services}</span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+      ${sample.map(p => {
+        const c = {north:'#2E7D52',central:'#C9A84C',south:'#6B21A8',services:'#1565C0'}[p.region] || '#6B7F74';
+        return `<div style="background:#fff;border:1px solid var(--b);border-left:3px solid ${c};border-radius:6px;padding:9px">
+          <div style="font-size:10px;color:${c};font-weight:700;font-family:monospace">${p.code}</div>
+          <div style="font-weight:600;color:var(--gd);font-size:11.5px;margin-top:3px;line-height:1.3">${trEsc(p.name)}</div>
+          <div style="font-size:10px;color:var(--m);margin-top:4px">${p.dur} · ${p.cat}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="margin-top:8px;font-size:11px;color:var(--m);font-style:italic" data-en="↑ Sample of ${total} products. Full library available in Tour Products module." data-vi="↑ Mẫu trong số ${total} sản phẩm. Đầy đủ trong module Tour Products.">↑ Sample of ${total} products. Full library available in Tour Products module.</div>
+  </div>`;
+}
+
+// Day 11 — Signature products spotlight
+function trWidgetSignatures() {
+  const sigs = [
+    {code:'AA-NV-HAN-HD-01',name:'Sofitel Metropole History Tour',city:'Hanoi',why:'1-hour walk through Vietnam\'s most storied hotel',whyVi:'Đi bộ 1 giờ qua khách sạn lịch sử nhất Việt Nam'},
+    {code:'Bhaya',         name:'Bhaya Cruise Overnight',         city:'Halong',why:'Iconic limestone bay, signature experience',whyVi:'Vịnh đá vôi biểu tượng, trải nghiệm tiêu biểu'},
+    {code:'AA-CV-HUE-FD',  name:'Imperial City + Royal Dinner',  city:'Hue',  why:'Nguyen Dynasty heritage + cuisine',whyVi:'Di sản triều Nguyễn + ẩm thực'},
+    {code:'AA-CV-HOI-EVE', name:'Hoi An Lantern Walk',           city:'Hoi An',why:'Old town at dusk — sensory magic',whyVi:'Phố cổ chiều tối — phép màu giác quan'},
+    {code:'AA-SV-MKG-HD',  name:'Mekong Sampan + Homestay',      city:'Mekong',why:'Slow river, real Vietnamese rural life',whyVi:'Sông chậm, đời sống nông thôn thật'}
+  ];
+  return `<div style="margin-top:10px"><div style="font-weight:600;color:var(--gd);font-size:12.5px;margin-bottom:10px" data-en="⭐ The 5 Signatures Every Staff Should Always Recommend" data-vi="⭐ 5 sản phẩm tiêu biểu mọi nhân viên nên đề xuất">⭐ The 5 Signatures Every Staff Should Always Recommend</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
+      ${sigs.map((s,i) => `<div style="background:linear-gradient(180deg,#FDF6E3 0%,#fff 100%);border:1px solid #C9A84C;border-radius:8px;padding:10px;text-align:center">
+        <div style="background:#C9A84C;color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;margin:0 auto 6px">${i+1}</div>
+        <div style="font-weight:700;color:var(--gd);font-size:11.5px;line-height:1.25">${s.name}</div>
+        <div style="font-size:10px;color:var(--m);margin-top:3px">${s.city}</div>
+        <div style="font-size:10.5px;color:#3a4a40;margin-top:6px;font-style:italic;line-height:1.4" data-en="${s.why}" data-vi="${s.whyVi}">${s.why}</div>
+      </div>`).join('')}
+    </div></div>`;
+}
+
+// Day 12 — Pricing table example + bar chart
+function trWidgetPricing() {
+  // Example: 6-day tour with base cost $1000 per person (varies by tier)
+  const tiers = [
+    {label:{en:'2 pax',vi:'2 khách'},        price:1450, bar:100},
+    {label:{en:'3-4 pax',vi:'3-4 khách'},    price:1200, bar:83},
+    {label:{en:'5-6 pax',vi:'5-6 khách'},    price:1050, bar:72},
+    {label:{en:'7-9 pax',vi:'7-9 khách'},    price:920,  bar:63},
+    {label:{en:'10+ pax',vi:'10+ khách'},    price:820,  bar:57},
+    {label:{en:'Solo +',vi:'Phụ thu single'},price:450,  bar:31, supp:true}
+  ];
+  return `<div style="margin-top:10px"><div style="font-weight:600;color:var(--gd);font-size:12.5px;margin-bottom:10px" data-en="💰 Example: 6-Day Vietnam Classic — Pricing Table (per pax, USD)" data-vi="💰 Ví dụ: Tour Việt Nam Cổ điển 6 ngày — Bảng giá (mỗi khách, USD)">💰 Example: 6-Day Vietnam Classic — Pricing Table (per pax, USD)</div>
+    <div style="background:#fff;border:1px solid var(--b);border-radius:8px;padding:14px">
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;text-align:center">
+        ${tiers.map(t => `<div>
+          <div style="font-size:10.5px;color:var(--m);font-weight:600;text-transform:uppercase;margin-bottom:4px" data-en="${t.label.en}" data-vi="${t.label.vi}">${t.label.en}</div>
+          <div style="font-family:'DM Serif Display',Georgia,serif;color:${t.supp?'#C0392B':'#2E7D52'};font-size:20px;font-weight:700">${t.supp?'+':''}$${t.price}</div>
+          <div style="margin-top:8px;background:#F7F8F6;border-radius:6px;height:80px;display:flex;align-items:flex-end;padding:2px"><div style="background:${t.supp?'#C0392B':'#2E7D52'};width:100%;height:${t.bar}%;border-radius:5px"></div></div>
+        </div>`).join('')}
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--m);font-style:italic;text-align:center" data-en="As group size grows, per-pax price drops. Solo travellers pay a supplement to cover single-room cost." data-vi="Nhóm càng đông, giá/khách càng giảm. Khách đơn trả phụ thu để bù phòng đơn.">As group size grows, per-pax price drops. Solo travellers pay a supplement to cover single-room cost.</div>
+    </div>
+    <div style="margin-top:8px;display:flex;gap:14px;font-size:11px;color:var(--m);justify-content:center">
+      <span><strong style="color:var(--gd)" data-en="Markup:" data-vi="Markup:">Markup:</strong> 30%</span>
+      <span><strong style="color:var(--gd)" data-en="Rule:" data-vi="Quy tắc:">Rule:</strong> <span data-en="never leave a tier blank" data-vi="không bao giờ để ô trống">never leave a tier blank</span></span>
+    </div></div>`;
+}
+
+// Day 13 — Sales psychology objection cards
+function trWidgetSalesPsych() {
+  const obj = [
+    {q:{en:'"Booking.com is cheaper!"',vi:'"Booking.com rẻ hơn!"'},a:{en:'We don\'t sell rooms — we sell expertise, curation, and a planner who knows you. OTAs can\'t do that.',vi:'Chúng tôi không bán phòng — chúng tôi bán chuyên môn, lựa chọn kỹ, và planner hiểu anh chị. OTA không làm được.'}},
+    {q:{en:'"Why $5000 per person?"',vi:'"Sao $5000/người?"'},a:{en:'Dedicated planner, 24/7 in-country support, hand-picked products, hotel upgrades agents can\'t access. Quality compounds.',vi:'Planner riêng, hỗ trợ 24/7 tại Việt Nam, sản phẩm chọn lọc, nâng cấp khách sạn agent không truy cập được. Chất lượng tích lũy.'}},
+    {q:{en:'"Can we get a discount?"',vi:'"Có giảm giá không?"'},a:{en:'We don\'t discount, but we can adjust scope. Want a longer trip? Smaller group? Lower hotel tier? Tell me what matters most.',vi:'Chúng tôi không giảm giá, nhưng có thể điều chỉnh phạm vi. Muốn tour dài hơn? Nhóm nhỏ hơn? Khách sạn hạng thấp hơn? Anh chị nói điều gì quan trọng nhất.'}}
+  ];
+  return `<div style="margin-top:10px"><div style="font-weight:600;color:var(--gd);font-size:12.5px;margin-bottom:10px" data-en="🎤 Objection Response Cards" data-vi="🎤 Thẻ phản hồi phản đối">🎤 Objection Response Cards</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+      ${obj.map(o => `<div style="background:#fff;border:1px solid var(--b);border-radius:8px;padding:12px">
+        <div style="color:#C0392B;font-weight:700;font-size:12px;margin-bottom:8px;font-style:italic" data-en='${o.q.en.replace(/'/g,"&apos;")}' data-vi='${o.q.vi.replace(/'/g,"&apos;")}'>${o.q.en}</div>
+        <div style="background:#E8F5EE;border-left:3px solid #2E7D52;padding:8px 10px;border-radius:5px;font-size:11.5px;color:#1a2e23;line-height:1.45" data-en="${o.a.en.replace(/"/g,'&quot;')}" data-vi="${o.a.vi.replace(/"/g,'&quot;')}">${o.a.en}</div>
+      </div>`).join('')}
+    </div></div>`;
+}
+
+// Day 14 — AI safety dos/donts
+function trWidgetAISafety() {
+  return `<div style="margin-top:10px"><div style="font-weight:600;color:var(--gd);font-size:12.5px;margin-bottom:10px" data-en="🤖 AI Safety: What You Can & Cannot Share" data-vi="🤖 An toàn AI: Cái gì được & không được gửi">🤖 AI Safety: What You Can & Cannot Share</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="background:#E8F5EE;border:1px solid #2E7D52;border-radius:8px;padding:12px">
+        <div style="color:#2E7D52;font-weight:700;font-size:12.5px;margin-bottom:8px" data-en="✓ OK to paste" data-vi="✓ Được gửi">✓ OK to paste</div>
+        <div style="font-size:11.5px;color:#1a2e23;line-height:1.7" data-en="• Destination text to polish<br>• Anonymized brief outline<br>• Email tone rewrites<br>• Brainstorming questions<br>• Summarize public articles" data-vi="• Văn bản điểm đến cần mài giũa<br>• Brief đã ẩn danh<br>• Viết lại tone email<br>• Câu hỏi brainstorm<br>• Tóm tắt bài viết công khai">• Destination text to polish<br>• Anonymized brief outline<br>• Email tone rewrites<br>• Brainstorming questions<br>• Summarize public articles</div>
+      </div>
+      <div style="background:#FEE2E2;border:1px solid #C0392B;border-radius:8px;padding:12px">
+        <div style="color:#C0392B;font-weight:700;font-size:12.5px;margin-bottom:8px" data-en="✗ NEVER paste" data-vi="✗ KHÔNG bao giờ gửi">✗ NEVER paste</div>
+        <div style="font-size:11.5px;color:#1a2e23;line-height:1.7" data-en="• Full client name + email together<br>• Internal cost sheets<br>• Supplier contracts<br>• Our markup formula<br>• Private agent pricing<br>• Confidential negotiations" data-vi="• Tên đầy đủ + email khách cùng nhau<br>• Bảng chi phí nội bộ<br>• Hợp đồng nhà cung cấp<br>• Công thức markup<br>• Giá agent riêng<br>• Đàm phán mật">• Full client name + email together<br>• Internal cost sheets<br>• Supplier contracts<br>• Our markup formula<br>• Private agent pricing<br>• Confidential negotiations</div>
+      </div>
+    </div></div>`;
+}
+
+// Day 15 — Sample trip combinations
+function trWidgetTripExamples() {
+  const trips = [
+    {name:{en:'6-Day Classic North',vi:'6 ngày Cổ điển miền Bắc'},route:'HAN-HALONG-NINHBINH-HAN',color:'#2E7D52',pax:'2-4',price:'$1,450-1,200',hl:{en:'Hanoi Old Quarter + Halong overnight + Tam Coc',vi:'Phố cổ HN + ngủ đêm Hạ Long + Tam Cốc'}},
+    {name:{en:'10-Day Vietnam Family',vi:'10 ngày Việt Nam Gia đình'},route:'HAN-HUE-HOIAN-SGN',color:'#C9A84C',pax:'4',price:'$2,800',hl:{en:'Classic + Hue royal + Hoi An lantern + Saigon',vi:'Cổ điển + Cung đình Huế + đèn lồng HA + Sài Gòn'}},
+    {name:{en:'14-Day Luxury Indochina',vi:'14 ngày Indochina cao cấp'},route:'HAN-HALONG-HUE-HOIAN-SGN-MEKONG',color:'#6B21A8',pax:'2',price:'$5,500',hl:{en:'5★ throughout + private guides + Mekong overnight',vi:'5★ toàn tour + HDV riêng + ngủ đêm Mekong'}}
+  ];
+  return `<div style="margin-top:10px"><div style="font-weight:600;color:var(--gd);font-size:12.5px;margin-bottom:10px" data-en="🗺️ Sample Trip Combinations" data-vi="🗺️ Tổ hợp tour mẫu">🗺️ Sample Trip Combinations</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+      ${trips.map(t => `<div style="background:#fff;border:1px solid var(--b);border-top:3px solid ${t.color};border-radius:8px;padding:12px">
+        <div style="font-weight:700;color:${t.color};font-size:13px;font-family:'DM Serif Display',Georgia,serif" data-en="${t.name.en}" data-vi="${t.name.vi}">${t.name.en}</div>
+        <div style="font-size:10px;color:var(--m);margin-top:4px;font-family:monospace">${t.route}</div>
+        <div style="display:flex;gap:6px;margin-top:8px;font-size:10.5px"><span style="background:#F7F8F6;padding:2px 7px;border-radius:5px">${t.pax} pax</span><span style="background:#F7F8F6;padding:2px 7px;border-radius:5px;color:#2E7D52;font-weight:600">${t.price}</span></div>
+        <div style="margin-top:8px;font-size:11px;color:#3a4a40;line-height:1.45" data-en="${t.hl.en}" data-vi="${t.hl.vi}">${t.hl.en}</div>
+      </div>`).join('')}
+    </div></div>`;
+}
+
+// Day 16 — Vietnam culture deep dive (religion pie + food regions + festivals + ethnic)
+function trWidgetVietnamCulture() {
+  const festivals = [
+    {month:1,name:{en:'Tet (Lunar NY)',vi:'Tết'},c:'#C0392B'},
+    {month:4,name:{en:'Hung Kings',vi:'Giỗ Tổ'},c:'#C9A84C'},
+    {month:9,name:{en:'Mid-Autumn',vi:'Trung Thu'},c:'#6B21A8'},
+    {month:12,name:{en:'Christmas',vi:'Giáng Sinh'},c:'#1565C0'}
+  ];
+  return `<div style="margin-top:10px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div style="background:#fff;border:1px solid var(--b);border-radius:8px;padding:12px">
+        <div style="font-weight:600;color:var(--gd);font-size:12px;margin-bottom:10px" data-en="🛐 Religion Mix" data-vi="🛐 Tôn giáo">🛐 Religion Mix</div>
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:90px;height:90px;border-radius:50%;background:conic-gradient(#C9A84C 0% 73%,#2E7D52 73% 86%,#6B21A8 86% 93%,#1565C0 93% 100%);position:relative">
+            <div style="position:absolute;inset:24px;background:#fff;border-radius:50%"></div>
+          </div>
+          <div style="font-size:11px;line-height:1.7">
+            <div><span style="display:inline-block;width:10px;height:10px;background:#C9A84C;border-radius:2px;margin-right:5px"></span><span data-en="Folk / no formal: 73%" data-vi="Tín ngưỡng dân gian: 73%">Folk / no formal: 73%</span></div>
+            <div><span style="display:inline-block;width:10px;height:10px;background:#2E7D52;border-radius:2px;margin-right:5px"></span><span data-en="Buddhist: 13%" data-vi="Phật giáo: 13%">Buddhist: 13%</span></div>
+            <div><span style="display:inline-block;width:10px;height:10px;background:#6B21A8;border-radius:2px;margin-right:5px"></span><span data-en="Catholic: 7%" data-vi="Công giáo: 7%">Catholic: 7%</span></div>
+            <div><span style="display:inline-block;width:10px;height:10px;background:#1565C0;border-radius:2px;margin-right:5px"></span><span data-en="Other: 7%" data-vi="Khác: 7%">Other: 7%</span></div>
           </div>
         </div>
-        <div style="font-style:italic;color:var(--m);font-size:12.5px;margin-bottom:8px">${trEsc(trLang(day.intro))}</div>
-        <details style="margin-top:8px"><summary style="cursor:pointer;font-size:12.5px;color:var(--gd);font-weight:600" data-en="Show details" data-vi="Xem chi tiết">Show details</summary>
-          <div style="margin-top:10px;font-size:13px;line-height:1.6">
+      </div>
+      <div style="background:#fff;border:1px solid var(--b);border-radius:8px;padding:12px">
+        <div style="font-weight:600;color:var(--gd);font-size:12px;margin-bottom:10px" data-en="🍜 3 Food Regions" data-vi="🍜 3 vùng ẩm thực">🍜 3 Food Regions</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+          <div style="background:#E8F5EE;border-radius:6px;padding:8px;text-align:center"><div style="font-size:18px">🍲</div><div style="font-weight:700;color:#2E7D52;font-size:11px" data-en="North" data-vi="Bắc">North</div><div style="font-size:10px;color:var(--m);margin-top:3px" data-en="Subtle · pho · bun cha" data-vi="Thanh · phở · bún chả">Subtle · pho · bun cha</div></div>
+          <div style="background:#FDF6E3;border-radius:6px;padding:8px;text-align:center"><div style="font-size:18px">🌶️</div><div style="font-weight:700;color:#C9A84C;font-size:11px" data-en="Central" data-vi="Trung">Central</div><div style="font-size:10px;color:var(--m);margin-top:3px" data-en="Spicy · bun bo Hue" data-vi="Cay · bún bò Huế">Spicy · bun bo Hue</div></div>
+          <div style="background:#FCE7F3;border-radius:6px;padding:8px;text-align:center"><div style="font-size:18px">🥥</div><div style="font-weight:700;color:#6B21A8;font-size:11px" data-en="South" data-vi="Nam">South</div><div style="font-size:10px;color:var(--m);margin-top:3px" data-en="Sweet · banh mi" data-vi="Ngọt · bánh mì">Sweet · banh mi</div></div>
+        </div>
+      </div>
+    </div>
+    <div style="background:#fff;border:1px solid var(--b);border-radius:8px;padding:12px;margin-bottom:10px">
+      <div style="font-weight:600;color:var(--gd);font-size:12px;margin-bottom:10px" data-en="🎊 Festivals Calendar — Key Months" data-vi="🎊 Lịch lễ hội — Tháng chính">🎊 Festivals Calendar — Key Months</div>
+      <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:3px">
+        ${Array.from({length:12},(_,i)=>{const m=i+1;const f=festivals.find(x=>x.month===m);return `<div style="text-align:center;padding:6px 2px;border-radius:5px;background:${f?f.c:'#F7F8F6'};color:${f?'#fff':'var(--m)'};font-size:10px;font-weight:${f?700:500}">${m}${f?`<div style="font-size:9px;margin-top:2px" data-en="${f.name.en}" data-vi="${f.name.vi}">${f.name.en}</div>`:''}</div>`}).join('')}
+      </div>
+    </div>
+    <div style="background:#fff;border:1px solid var(--b);border-radius:8px;padding:12px">
+      <div style="font-weight:600;color:var(--gd);font-size:12px;margin-bottom:8px" data-en="👥 54 Ethnic Groups — Top 6 by Population" data-vi="👥 54 dân tộc — 6 lớn nhất">👥 54 Ethnic Groups — Top 6 by Population</div>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;text-align:center;font-size:11px">
+        <div style="background:#2E7D52;color:#fff;padding:6px;border-radius:5px"><strong>Kinh</strong><div style="font-size:10px;opacity:0.85">85.3%</div></div>
+        <div style="background:#5AA87A;color:#fff;padding:6px;border-radius:5px"><strong>Tày</strong><div style="font-size:10px;opacity:0.85">1.9%</div></div>
+        <div style="background:#C9A84C;color:#fff;padding:6px;border-radius:5px"><strong>Thái</strong><div style="font-size:10px;opacity:0.85">1.8%</div></div>
+        <div style="background:#D97706;color:#fff;padding:6px;border-radius:5px"><strong>Mường</strong><div style="font-size:10px;opacity:0.85">1.5%</div></div>
+        <div style="background:#6B21A8;color:#fff;padding:6px;border-radius:5px"><strong>Khmer</strong><div style="font-size:10px;opacity:0.85">1.4%</div></div>
+        <div style="background:#1565C0;color:#fff;padding:6px;border-radius:5px"><strong>H'mông</strong><div style="font-size:10px;opacity:0.85">1.3%</div></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// Day 17 — B2B Agents from SEED_AGENTS
+function trWidgetAgents() {
+  if (typeof SEED_AGENTS === 'undefined') return '';
+  const visible = SEED_AGENTS.filter(a => a.tier !== 'Direct');
+  const tierColors = {Bronze:'#A0522D',Silver:'#94A3B8',Gold:'#C9A84C',Platinum:'#6B21A8'};
+  return `<div style="margin-top:10px"><div style="font-weight:600;color:var(--gd);font-size:12.5px;margin-bottom:10px" data-en="🤝 Our Active B2B Agents (from CRM)" data-vi="🤝 Đại lý B2B đang hợp tác (từ CRM)">🤝 Our Active B2B Agents (from CRM)</div>
+    <div style="display:grid;grid-template-columns:repeat(${Math.min(visible.length,5)},1fr);gap:8px">
+      ${visible.map(a => `<div style="background:#fff;border:1px solid var(--b);border-top:3px solid ${tierColors[a.tier]||'#6B7F74'};border-radius:8px;padding:11px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
+          <div style="font-weight:700;color:var(--gd);font-size:12px;line-height:1.2">${trEsc(a.name)}</div>
+          <span style="background:${tierColors[a.tier]||'#6B7F74'};color:#fff;padding:2px 7px;border-radius:7px;font-size:9.5px;font-weight:600">${a.tier}</span>
+        </div>
+        <div style="font-size:10px;color:var(--m);margin-top:4px">${a.country} · ${a.currency}</div>
+        <div style="font-size:11px;color:#2E7D52;font-weight:700;margin-top:4px">${a.commissionPct}% <span style="color:var(--m);font-weight:500;font-size:10px" data-en="commission" data-vi="hoa hồng">commission</span></div>
+      </div>`).join('')}
+    </div></div>`;
+}
+
+// Day 19 — Suppliers categories + sample guides
+function trWidgetSuppliersGuides() {
+  const cats = [
+    {icon:'🏨',name:{en:'Hotels & Cruises',vi:'Khách sạn & Du thuyền'},c:'#2E7D52'},
+    {icon:'🍽️',name:{en:'Restaurants',vi:'Nhà hàng'},c:'#C9A84C'},
+    {icon:'🚗',name:{en:'Transport',vi:'Vận chuyển'},c:'#1565C0'},
+    {icon:'🎭',name:{en:'Activities',vi:'Hoạt động'},c:'#6B21A8'},
+    {icon:'🛠️',name:{en:'Local Fixers',vi:'Fixer địa phương'},c:'#C0392B'}
+  ];
+  let guidesHtml = '';
+  if (typeof SEED_GUIDES !== 'undefined' && SEED_GUIDES.length) {
+    const top = SEED_GUIDES.slice(0, 3);
+    guidesHtml = `<div style="margin-top:14px"><div style="font-weight:600;color:var(--gd);font-size:12px;margin-bottom:8px" data-en="🧭 Sample Guides (from CRM)" data-vi="🧭 HDV mẫu (từ CRM)">🧭 Sample Guides (from CRM)</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+        ${top.map(g => `<div style="background:#fff;border:1px solid var(--b);border-radius:7px;padding:10px">
+          <div style="font-weight:700;color:var(--gd);font-size:12px">${trEsc(g.ename||g.fullname)}</div>
+          <div style="font-size:10px;color:var(--m);margin-top:3px">${g.region} · ${g.langs} · ${g.years}y · ${g.rating}</div>
+          <div style="font-size:10.5px;color:#3a4a40;margin-top:5px;line-height:1.4"><strong style="color:var(--gd)">${g.specialty}</strong></div>
+        </div>`).join('')}
+      </div></div>`;
+  }
+  return `<div style="margin-top:10px"><div style="font-weight:600;color:var(--gd);font-size:12.5px;margin-bottom:10px" data-en="🤝 5 Supplier Categories" data-vi="🤝 5 loại nhà cung cấp">🤝 5 Supplier Categories</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
+      ${cats.map(c => `<div style="background:#fff;border:1px solid var(--b);border-radius:8px;padding:12px;text-align:center">
+        <div style="font-size:26px">${c.icon}</div>
+        <div style="font-weight:700;color:${c.c};font-size:11.5px;margin-top:5px" data-en="${c.name.en}" data-vi="${c.name.vi}">${c.name.en}</div>
+      </div>`).join('')}
+    </div>${guidesHtml}</div>`;
+}
+
+// Day 20 — NPS gauge + service recovery formula
+function trWidgetNPS() {
+  return `<div style="margin-top:10px"><div style="font-weight:600;color:var(--gd);font-size:12.5px;margin-bottom:10px" data-en="⭐ NPS Score Zones (0-10)" data-vi="⭐ Vùng điểm NPS (0-10)">⭐ NPS Score Zones (0-10)</div>
+    <div style="background:#fff;border:1px solid var(--b);border-radius:8px;padding:14px">
+      <div style="display:flex;height:36px;border-radius:8px;overflow:hidden">
+        <div style="flex:7;background:linear-gradient(90deg,#C0392B 0%,#E74C3C 100%);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:11.5px" data-en="DETRACTOR (0-6)" data-vi="DETRACTOR (0-6)">DETRACTOR (0-6)</div>
+        <div style="flex:2;background:#C9A84C;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:11.5px" data-en="PASSIVE (7-8)" data-vi="PASSIVE (7-8)">PASSIVE (7-8)</div>
+        <div style="flex:2;background:linear-gradient(90deg,#5AA87A 0%,#2E7D52 100%);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:11.5px" data-en="PROMOTER (9-10)" data-vi="PROMOTER (9-10)">PROMOTER (9-10)</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--m);padding:0 4px">
+        ${[0,1,2,3,4,5,6,7,8,9,10].map(n => `<span>${n}</span>`).join('')}
+      </div>
+    </div>
+    <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px">
+      ${['A — Acknowledge','A — Apologize','A — Act','F — Follow up 48h'].map((s,i) => `<div style="background:${['#FEE2E2','#FEF3C7','#DBEAFE','#DCFCE7'][i]};border-radius:7px;padding:9px;text-align:center;font-size:11.5px;font-weight:600;color:${['#C0392B','#D97706','#1565C0','#2E7D52'][i]}">${s}</div>`).join('')}
+    </div>
+    <div style="margin-top:6px;text-align:center;font-size:11px;color:var(--m);font-style:italic" data-en="Service Recovery Formula — apply in this order, always" data-vi="Công thức khắc phục — áp dụng theo thứ tự này, luôn luôn">Service Recovery Formula — apply in this order, always</div>
+  </div>`;
+}
+
+// Day 22 — Crisis scenarios card deck
+function trWidgetCrisis() {
+  const scenarios = [
+    {icon:'🏨',name:{en:'Midnight Hotel Change',vi:'Đổi KS khuya'}, first:{en:'Call duty manager → confirm new room → send car',vi:'Gọi duty manager → xác nhận phòng mới → gửi xe'}},
+    {icon:'📔',name:{en:'Lost Passport',vi:'Mất hộ chiếu'},        first:{en:'Calm client → embassy → police report',vi:'Bình tĩnh khách → đại sứ quán → biên bản công an'}},
+    {icon:'✈️',name:{en:'Missed Flight',vi:'Lỡ chuyến bay'},        first:{en:'Rebook next available → adjust transport → no blame',vi:'Đặt lại chuyến kế → điều chỉnh đón → không đổ lỗi'}},
+    {icon:'🤒',name:{en:'Sick Traveller',vi:'Khách bệnh'},          first:{en:'Assess severity → medical contact → hospital list',vi:'Đánh giá mức độ → liên hệ y tế → danh sách BV'}},
+    {icon:'💸',name:{en:'Last-Min Refund',vi:'Hoàn tiền phút chót'},first:{en:'Listen fully → don\'t promise → escalate to Tai 2h',vi:'Nghe đủ → không hứa → báo anh Tai 2h'}}
+  ];
+  return `<div style="margin-top:10px"><div style="font-weight:600;color:var(--gd);font-size:12.5px;margin-bottom:10px" data-en="🚨 5 Crisis Scenarios — First-Response Card Deck" data-vi="🚨 5 tình huống khẩn — Bộ thẻ phản ứng đầu">🚨 5 Crisis Scenarios — First-Response Card Deck</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
+      ${scenarios.map(s => `<div style="background:#fff;border:1px solid var(--b);border-top:3px solid #C0392B;border-radius:8px;padding:11px;text-align:center">
+        <div style="font-size:28px">${s.icon}</div>
+        <div style="font-weight:700;color:#C0392B;font-size:11.5px;margin-top:5px;line-height:1.2" data-en="${s.name.en}" data-vi="${s.name.vi}">${s.name.en}</div>
+        <div style="font-size:10.5px;color:#3a4a40;margin-top:6px;line-height:1.4" data-en="${s.first.en.replace(/'/g,"&apos;")}" data-vi="${s.first.vi.replace(/'/g,"&apos;")}">${s.first.en}</div>
+      </div>`).join('')}
+    </div></div>`;
+}
+
+// Dispatcher — returns the widget HTML for a given day (empty if none)
+function trDayWidget(day) {
+  const map = {3:trWidgetWeather,4:trWidgetMarkets,5:trWidgetHotelsFlights,6:trWidgetPipeline,10:trWidgetProductsGrid,11:trWidgetSignatures,12:trWidgetPricing,13:trWidgetSalesPsych,14:trWidgetAISafety,15:trWidgetTripExamples,16:trWidgetVietnamCulture,17:trWidgetAgents,19:trWidgetSuppliersGuides,20:trWidgetNPS,22:trWidgetCrisis};
+  const fn = map[day];
+  return fn ? fn() : '';
+}
+
+function renderTrCurric() {
+  const el = document.getElementById('tr-curric-content');
+  const weekThemes = {
+    1: {en:'Foundations', vi:'Nền tảng', icon:'🌱', color:'#2E7D52', desc:{en:'Company DNA · soft skills · Vietnam basics · CRM walkthrough · hotel/flight standards', vi:'DNA công ty · kỹ năng mềm · Việt Nam cơ bản · CRM tổng quan · chuẩn KS/chuyến bay'}},
+    2: {en:'Sales Mastery', vi:'Bán hàng', icon:'🎯', color:'#C9A84C', desc:{en:'Pipeline · clients · etiquette · discovery interview · product selection', vi:'Pipeline · khách hàng · phép tắc · phỏng vấn khám phá · chọn sản phẩm'}},
+    3: {en:'Pricing & AI', vi:'Định giá & AI', icon:'💰', color:'#6B21A8', desc:{en:'193 products · 6-tier pricing · markup · sales psychology · AI tools · capstone', vi:'193 sản phẩm · giá 6 mức · markup · tâm lý bán · công cụ AI · capstone'}},
+    4: {en:'Vietnam Depth & Ops', vi:'Việt Nam sâu & Vận hành', icon:'🇻🇳', color:'#1565C0', desc:{en:'Deep Vietnam · B2B agents · bookings/SOPs · suppliers/guides · post-tour', vi:'Việt Nam sâu · đại lý B2B · bookings/SOPs · nhà cung cấp/HDV · hậu tour'}},
+    5: {en:'Drills & Certification', vi:'Diễn tập & Chứng nhận', icon:'🏆', color:'#C0392B', desc:{en:'Photography · crisis drills · role-play exam · final exam · live lead certification', vi:'Nhiếp ảnh · diễn tập khẩn · vai diễn · thi cuối · lead thật + chứng nhận'}}
+  };
+
+  // ── HEADER + PROGRAM AT A GLANCE ──────────────────────────────────────────
+  let html = `<div class="card" style="padding:20px;margin-bottom:14px;background:linear-gradient(135deg,#E8F5EE 0%,#FDF6E3 100%);border:1px solid #C9A84C">
+    <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:24px;align-items:center">
+      <div>
+        <h2 style="margin:0;font-family:'DM Serif Display',Georgia,serif;color:var(--gd);font-size:24px" data-en="📚 Curriculum Library — 25 Days" data-vi="📚 Thư viện chương trình — 25 ngày">📚 Curriculum Library — 25 Days</h2>
+        <div style="color:#3a4a40;font-size:13px;margin-top:8px;line-height:1.55" data-en="Full read-only reference with infographics. Pulls live data from your Tour Products, Hotels, B2B Agents, and Guides modules." data-vi="Tham khảo chỉ đọc có infographic đầy đủ. Lấy data trực tiếp từ module Tour Products, Hotels, B2B Agents và Guides.">Full read-only reference with infographics. Pulls live data from your Tour Products, Hotels, B2B Agents, and Guides modules.</div>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <span style="background:#fff;border:1px solid var(--b);padding:4px 10px;border-radius:11px;font-size:11px;font-weight:600;color:var(--gd)">📖 25 days</span>
+          <span style="background:#fff;border:1px solid var(--b);padding:4px 10px;border-radius:11px;font-size:11px;font-weight:600;color:var(--gd)">🎯 125 quiz Q</span>
+          <span style="background:#fff;border:1px solid var(--b);padding:4px 10px;border-radius:11px;font-size:11px;font-weight:600;color:var(--gd)">📊 15 widgets</span>
+          <span style="background:#fff;border:1px solid var(--b);padding:4px 10px;border-radius:11px;font-size:11px;font-weight:600;color:var(--gd)">🌐 EN/VN</span>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:10.5px;color:var(--m);font-weight:600;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px" data-en="Program at a glance — click to scroll" data-vi="Tổng quan chương trình — click để scroll">Program at a glance — click to scroll</div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px">
+          ${Array.from({length:25},(_,i)=>{const d=i+1;const w=Math.ceil(d/5);const c=weekThemes[w].color;return `<a href="#tr-curric-d${d}" style="background:${c}18;border:1px solid ${c}55;color:${c};border-radius:6px;padding:7px 4px;text-align:center;font-weight:700;font-size:11px;font-family:'DM Serif Display',Georgia,serif;text-decoration:none;cursor:pointer">${d}</a>`}).join('')}
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  // ── BY WEEK ───────────────────────────────────────────────────────────────
+  for (let w = 1; w <= 5; w++) {
+    const th = weekThemes[w];
+    html += `<div style="margin:24px 0 10px 0;padding:14px 18px;background:linear-gradient(90deg,${th.color}15 0%,#fff 100%);border-left:5px solid ${th.color};border-radius:8px">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="background:${th.color};color:#fff;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px">${th.icon}</div>
+        <div style="flex:1">
+          <div style="font-size:11px;color:var(--m);font-weight:600;letter-spacing:0.6px;text-transform:uppercase" data-en="Week ${w} · Days ${(w-1)*5+1}-${w*5}" data-vi="Tuần ${w} · Ngày ${(w-1)*5+1}-${w*5}">Week ${w} · Days ${(w-1)*5+1}-${w*5}</div>
+          <div style="font-family:'DM Serif Display',Georgia,serif;color:${th.color};font-size:22px;margin-top:2px">${trLang(th)}</div>
+          <div style="color:var(--m);font-size:12px;margin-top:3px" data-en="${th.desc.en}" data-vi="${th.desc.vi}">${th.desc.en}</div>
+        </div>
+      </div>
+    </div>`;
+    for (let d = (w-1)*5+1; d <= w*5; d++) {
+      const day = TR_CURRICULUM[d-1];
+      const widget = trDayWidget(d);
+      html += `<div class="card" id="tr-curric-d${d}" style="padding:16px;margin-bottom:10px;border-left:3px solid ${th.color}">
+        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;gap:10px;flex-wrap:wrap">
+          <div style="flex:1;min-width:200px">
+            <span style="background:${th.color};color:#fff;padding:3px 10px;border-radius:11px;font-size:11px;font-weight:700;margin-right:8px">Day ${day.day}</span>
+            <strong style="color:var(--gd);font-size:14.5px">${trEsc(trLang(day.title))}</strong>
+          </div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap">
+            <span style="background:#E8F5EE;color:#2E7D52;padding:2px 8px;border-radius:7px;font-size:10px;font-weight:600">📖 READ</span>
+            <span style="background:#FDF6E3;color:#C9A84C;padding:2px 8px;border-radius:7px;font-size:10px;font-weight:600">🛠 PRACTICE</span>
+            <span style="background:#F3E8FF;color:#6B21A8;padding:2px 8px;border-radius:7px;font-size:10px;font-weight:600">✦ TASK</span>
+            <span style="background:#FEE2E2;color:#C0392B;padding:2px 8px;border-radius:7px;font-size:10px;font-weight:600">🎯 ${day.quiz.length}Q</span>
+          </div>
+        </div>
+        <div style="font-style:italic;color:#3a4a40;font-size:12.5px;margin-bottom:4px;line-height:1.55">${trEsc(trLang(day.intro))}</div>
+        ${widget}
+        <details style="margin-top:10px"><summary style="cursor:pointer;font-size:12px;color:var(--gd);font-weight:600" data-en="Show full text (READ / PRACTICE / TASK)" data-vi="Xem đầy đủ văn bản (ĐỌC / THỰC HÀNH / NHIỆM VỤ)">Show full text (READ / PRACTICE / TASK)</summary>
+          <div style="margin-top:10px;font-size:12.5px;line-height:1.65;background:#F7F8F6;padding:12px;border-radius:7px">
             <div style="margin-bottom:8px"><strong style="color:#2E7D52" data-en="📖 Read:" data-vi="📖 Đọc:">📖 Read:</strong> ${trEsc(trLang(day.read))}</div>
             <div style="margin-bottom:8px"><strong style="color:#C9A84C" data-en="🛠 Practice:" data-vi="🛠 Thực hành:">🛠 Practice:</strong> ${trEsc(trLang(day.practice))}</div>
-            <div style="margin-bottom:8px"><strong style="color:#6B21A8" data-en="✦ Task:" data-vi="✦ Nhiệm vụ:">✦ Task:</strong> ${trEsc(trLang(day.task))}</div>
-            <div style="margin-top:8px;color:var(--m);font-size:12px" data-en="${day.quiz.length} quiz questions · 80% to pass" data-vi="${day.quiz.length} câu quiz · 80% để đậu">${day.quiz.length} quiz questions · 80% to pass</div>
+            <div><strong style="color:#6B21A8" data-en="✦ Task:" data-vi="✦ Nhiệm vụ:">✦ Task:</strong> ${trEsc(trLang(day.task))}</div>
           </div>
         </details>
       </div>`;
