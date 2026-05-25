@@ -259,6 +259,28 @@ kbd{font-family:inherit}
 }
 </style>
 
+<!-- ═══ THEME PICKER STYLES ═══ -->
+<style>
+#theme-picker-btn{display:flex;align-items:center;gap:8px;padding:10px 14px;margin:6px 8px 0;cursor:pointer;color:rgba(255,255,255,0.5);font-size:12px;font-weight:500;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);transition:all .15s;user-select:none}
+#theme-picker-btn:hover{background:rgba(255,255,255,0.09);color:rgba(255,255,255,0.85)}
+#theme-panel{overflow:hidden;max-height:0;transition:max-height .28s ease,opacity .2s;opacity:0;margin:0 8px}
+#theme-panel.open{max-height:200px;opacity:1}
+.theme-panel-inner{background:rgba(0,0,0,0.25);border-radius:10px;padding:12px 14px;margin-top:6px}
+.theme-panel-label{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,0.4);margin-bottom:10px;font-weight:500}
+.theme-swatches{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:10px}
+.theme-swatch{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:4px 2px;border-radius:6px;transition:background .12s}
+.theme-swatch:hover{background:rgba(255,255,255,0.08)}
+.swatch-circle{width:28px;height:28px;border-radius:50%;border:2.5px solid transparent;transition:all .15s;position:relative}
+.swatch-circle::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(255,255,255,0);transition:border-color .15s}
+.theme-swatch.active .swatch-circle::after{border-color:rgba(255,255,255,0.7)}
+.swatch-name{font-size:9.5px;color:rgba(255,255,255,0.45);font-weight:500;white-space:nowrap}
+.theme-swatch.active .swatch-name{color:rgba(255,255,255,0.9)}
+.theme-sidebar-preview{display:flex;gap:5px;align-items:center;padding:6px 8px;background:rgba(255,255,255,0.06);border-radius:7px}
+.tsb-dot{width:8px;height:8px;border-radius:50%}
+.tsb-text{font-size:10.5px;color:rgba(255,255,255,0.5)}
+#sb-footer{padding-bottom:14px}
+</style>
+
 <!-- ═══ AI CO-PILOT STYLES ═══ -->
 <style>
 #ai-copilot-panel{position:fixed;top:0;right:-420px;width:400px;height:100vh;background:#fff;z-index:490;transition:right .3s cubic-bezier(.4,0,.2,1);box-shadow:-4px 0 30px rgba(0,0,0,0.13);display:flex;flex-direction:column;font-family:'DM Sans',Inter,Segoe UI,sans-serif}
@@ -338,6 +360,55 @@ kbd{font-family:inherit}
   <div class="sbi" data-page="ai">⚡ <span data-en="AI Requirements" data-vi="Yêu cầu AI">AI Requirements</span> <span class="sb-new">NEW</span></div>
   <div class="sbi" data-page="devnotes">📝 <span data-en="Dev Notes" data-vi="Ghi chú kỹ thuật">Dev Notes</span></div>
   <div class="sbi" data-page="teamchat">💬 <span data-en="Team Chat" data-vi="Chat nội bộ">Team Chat</span> <span id="chat-unread-badge" style="display:none;background:var(--red);color:#fff;border-radius:10px;font-size:9px;padding:1px 6px;font-weight:700;margin-left:auto">0</span></div>
+
+  <!-- ═══ THEME PICKER ═══ -->
+  <div id="sb-footer" style="margin-top:auto;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);margin:auto 0 0">
+
+    <div id="theme-picker-btn" onclick="toggleThemePanel()">
+      <span style="font-size:14px">🎨</span>
+      <span data-en="Appearance" data-vi="Giao diện">Appearance</span>
+      <span id="theme-arrow" style="margin-left:auto;font-size:10px;transition:transform .2s">▾</span>
+    </div>
+
+    <div id="theme-panel">
+      <div class="theme-panel-inner">
+        <div class="theme-panel-label" data-en="Choose sidebar theme" data-vi="Chọn màu giao diện">Choose sidebar theme</div>
+        <div class="theme-swatches">
+
+          <div class="theme-swatch active" id="swatch-forest" onclick="applyTheme('forest')">
+            <div class="swatch-circle" style="background:linear-gradient(135deg,#2E7D52 50%,#1a5c38 50%)"></div>
+            <div class="swatch-name" data-en="Forest" data-vi="Rừng xanh">Forest</div>
+          </div>
+
+          <div class="theme-swatch" id="swatch-midnight" onclick="applyTheme('midnight')">
+            <div class="swatch-circle" style="background:linear-gradient(135deg,#1d4ed8 50%,#1a2a4a 50%)"></div>
+            <div class="swatch-name" data-en="Midnight" data-vi="Đêm xanh">Midnight</div>
+          </div>
+
+          <div class="theme-swatch" id="swatch-obsidian" onclick="applyTheme('obsidian')">
+            <div class="swatch-circle" style="background:linear-gradient(135deg,#52525b 50%,#18181b 50%)"></div>
+            <div class="swatch-name" data-en="Obsidian" data-vi="Đen xám">Obsidian</div>
+          </div>
+
+          <div class="theme-swatch" id="swatch-terracotta" onclick="applyTheme('terracotta')">
+            <div class="swatch-circle" style="background:linear-gradient(135deg,#c2410c 50%,#7c2d12 50%)"></div>
+            <div class="swatch-name" data-en="Terra" data-vi="Đất đỏ">Terra</div>
+          </div>
+
+          <div class="theme-swatch" id="swatch-royal" onclick="applyTheme('royal')">
+            <div class="swatch-circle" style="background:linear-gradient(135deg,#7c3aed 50%,#581c87 50%)"></div>
+            <div class="swatch-name" data-en="Royal" data-vi="Tím hoàng">Royal</div>
+          </div>
+
+        </div>
+        <div class="theme-sidebar-preview">
+          <div class="tsb-dot" id="preview-dot" style="background:#C9A84C"></div>
+          <span class="tsb-text" id="preview-label">Forest — default brand theme</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <!-- ═══════ MAIN ═══════ -->
@@ -13687,6 +13758,112 @@ function renderFXPill() {
 // ══════════════════════════════════════════════════════════════════
 // BOOT
 // ══════════════════════════════════════════════════════════════════
+// ── THEME PICKER ─────────────────────────────────────────────────────────────
+const TAA_THEMES = {
+  forest: {
+    name: { en: 'Forest — default brand theme', vi: 'Rừng xanh — giao diện mặc định' },
+    vars: {
+      '--g':      '#2E7D52',
+      '--gl':     '#E8F5EE',
+      '--gd':     '#1a5c38',
+      '--gm':     '#5AA87A',
+      '--gold':   '#C9A84C',
+      '--gold-l': '#FDF6E3',
+    }
+  },
+  midnight: {
+    name: { en: 'Midnight — deep navy blue', vi: 'Đêm xanh — xanh hải quân' },
+    vars: {
+      '--g':      '#1d4ed8',
+      '--gl':     '#eff6ff',
+      '--gd':     '#1a2a4a',
+      '--gm':     '#3b82f6',
+      '--gold':   '#60a5fa',
+      '--gold-l': '#dbeafe',
+    }
+  },
+  obsidian: {
+    name: { en: 'Obsidian — dark charcoal', vi: 'Đen xám — than chì' },
+    vars: {
+      '--g':      '#52525b',
+      '--gl':     '#f4f4f5',
+      '--gd':     '#18181b',
+      '--gm':     '#71717a',
+      '--gold':   '#C9A84C',
+      '--gold-l': '#fef9c3',
+    }
+  },
+  terracotta: {
+    name: { en: 'Terra — warm terracotta', vi: 'Đất đỏ — terracotta ấm' },
+    vars: {
+      '--g':      '#c2410c',
+      '--gl':     '#fff7ed',
+      '--gd':     '#7c2d12',
+      '--gm':     '#ea580c',
+      '--gold':   '#fbbf24',
+      '--gold-l': '#fef3c7',
+    }
+  },
+  royal: {
+    name: { en: 'Royal — deep violet', vi: 'Tím hoàng — tím đậm' },
+    vars: {
+      '--g':      '#7c3aed',
+      '--gl':     '#f5f3ff',
+      '--gd':     '#581c87',
+      '--gm':     '#a78bfa',
+      '--gold':   '#f59e0b',
+      '--gold-l': '#fffbeb',
+    }
+  }
+};
+
+let _activeTheme = 'forest';
+
+function applyTheme(name) {
+  const theme = TAA_THEMES[name];
+  if (!theme) return;
+  _activeTheme = name;
+
+  // Apply CSS variables to :root
+  const root = document.documentElement;
+  Object.entries(theme.vars).forEach(([k, v]) => root.style.setProperty(k, v));
+
+  // Also update sidebar background directly (in case --gd has specificity issues)
+  const sb = document.getElementById('sb');
+  if (sb) sb.style.background = theme.vars['--gd'];
+
+  // Update active swatch UI
+  document.querySelectorAll('.theme-swatch').forEach(el => el.classList.remove('active'));
+  const activeSwatch = document.getElementById('swatch-' + name);
+  if (activeSwatch) activeSwatch.classList.add('active');
+
+  // Update preview label
+  const lang = LS.get('ant_lang','en') === 'vi' ? 'vi' : 'en';
+  const dot = document.getElementById('preview-dot');
+  const label = document.getElementById('preview-label');
+  if (dot) dot.style.background = theme.vars['--gold'];
+  if (label) label.textContent = theme.name[lang];
+
+  // Save to localStorage
+  LS.set('ant_theme', name);
+}
+
+function toggleThemePanel() {
+  const panel = document.getElementById('theme-panel');
+  const arrow = document.getElementById('theme-arrow');
+  if (!panel) return;
+  const isOpen = panel.classList.toggle('open');
+  if (arrow) arrow.style.transform = isOpen ? 'rotate(180deg)' : '';
+}
+
+function loadSavedTheme() {
+  const saved = LS.get('ant_theme', 'forest');
+  if (saved && saved !== 'forest') applyTheme(saved);
+  else applyTheme('forest');  // ensure preview label is set
+}
+
+loadSavedTheme();
+
 nav('dashboard');
 renderSteps();
 calcMarkup();
