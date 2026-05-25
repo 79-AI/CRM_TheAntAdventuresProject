@@ -289,6 +289,10 @@ kbd{font-family:inherit}
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<!-- ── EXPORT LIBRARIES ── -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.3/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js"></script>
 </head>
 <body>
 <div id="app">
@@ -7288,94 +7292,457 @@ function copyAiResult() {
   navigator.clipboard.writeText(text).then(()=>alert('Copied to clipboard!')).catch(()=>alert('Please manually select and copy the text.'));
 }
 
-function exportItineraryPDF() {
-  const aiText  = document.getElementById('ai-box').textContent || '';
-  if (!aiText.trim()) { alert('Generate an itinerary first.'); return; }
-  const custSel = document.getElementById('d-cust');
-  const custName = custSel?.value ? custSel.options[custSel.selectedIndex]?.text?.split(' (')[0] : 'Client';
-  const pax     = document.getElementById('d-pax')?.value || '2';
-  const month   = document.getElementById('d-month')?.value || 'Oct';
-  const tier    = document.getElementById('d-tier')?.value || '';
-  // Format text for HTML
-  const lines = aiText.split('\n');
-  let bodyHtml = '';
-  lines.forEach(line => {
-    if (line.startsWith('## '))      bodyHtml += `<h2>${line.slice(3)}</h2>`;
-    else if (line.startsWith('# '))  bodyHtml += `<h1>${line.slice(2)}</h1>`;
-    else if (line.startsWith('- '))  bodyHtml += `<li>${line.slice(2)}</li>`;
-    else if (line.trim() === '')     bodyHtml += `<br>`;
-    else                             bodyHtml += `<p>${line}</p>`;
-  });
-  const win = window.open('', '_blank');
-  win.document.write(`<!DOCTYPE html>
-<html><head>
-<meta charset="UTF-8">
-<title>The Ant Adventures CRM v43</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:'DM Sans',sans-serif;font-size:13px;color:#1a2e23;line-height:1.7;max-width:750px;margin:0 auto;padding:40px 48px}
-  .hdr{background:#2E7D52;color:#fff;padding:28px 36px;border-radius:11px;margin-bottom:32px;display:flex;justify-content:space-between;align-items:flex-end}
-  .hdr-logo{font-size:22px;font-weight:700;font-family:'DM Serif Display',Georgia,serif;letter-spacing:.5px}
-  .hdr-meta{font-size:12px;text-align:right;opacity:.85}
-  h1{font-family:'DM Serif Display',Georgia,serif;font-size:26px;color:#1a5c38;margin:24px 0 8px;border-bottom:2px solid #E8F5EE;padding-bottom:8px}
-  h2{font-family:'DM Serif Display',Georgia,serif;font-size:18px;color:#2E7D52;margin:20px 0 6px}
-  p{margin-bottom:10px;color:#2a3a2f}
-  li{margin-left:20px;margin-bottom:5px}
-  table{width:100%;border-collapse:collapse;margin:10px 0 16px}
-  th{background:#2E7D52;color:#fff;padding:8px 12px;text-align:left;font-size:12px}
-  td{padding:7px 12px;border-bottom:1px solid #E8F5EE;font-size:12.5px}
-  tr:nth-child(even) td{background:#F7F8F6}
-  .ftr{margin-top:36px;padding-top:16px;border-top:2px solid #E8F5EE;font-size:11.5px;color:#6B7F74;display:flex;justify-content:space-between}
-  @media print{body{padding:20px 28px}.hdr{-webkit-print-color-adjust:exact;print-color-adjust:exact}th{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-</style>
-</head><body>
-<div class="hdr">
-  <div>
-    <div class="hdr-logo">🐜 The Ant Adventures</div>
-    <div style="font-size:13px;margin-top:6px;opacity:.9">Boutique Inbound Travel · Vietnam</div>
-  </div>
-  <div class="hdr-meta">
-    <div><b>${custName}</b> · ${pax} pax · ${month} 2026</div>
-    <div>${tier}</div>
-    <div style="margin-top:4px">taipham@theantadventures.com</div>
-  </div>
-</div>
-${bodyHtml}
-<div class="ftr">
-  <span>The Ant Adventures · Boutique Vietnam Inbound Travel</span>
-  <span>www.theantadventures.com · taipham@theantadventures.com</span>
-</div>
+// ── EXPORT HELPERS ────────────────────────────────────────────────────────────
+// Logo preloader — loads Logo-3.png once on startup, used by both PDF and Word export
+let _taaLogo = null;
+function preloadTaaLogo() {
+  const img = new Image();
+  img.onload = function() {
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width; canvas.height = img.height;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      _taaLogo = canvas.toDataURL('image/png');
+    } catch(e) { _taaLogo = null; }
+  };
+  img.onerror = function() { _taaLogo = null; };
+  img.src = 'Logo-3.png';
+}
+preloadTaaLogo();
 
-</body></html>`);
-  win.document.close();
-  setTimeout(() => win.print(), 400);
+// Shared markdown parser — converts AI output text into structured sections
+function parseItineraryText(text) {
+  const lines = text.split('\n');
+  const sections = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    // H1 heading
+    if (line.startsWith('# ') && !line.startsWith('## ')) {
+      sections.push({ type: 'h1', text: line.slice(2).trim() });
+      i++;
+    // H2 section heading
+    } else if (line.startsWith('## ')) {
+      sections.push({ type: 'h2', text: line.slice(3).trim() });
+      i++;
+    // Bullet list — collect consecutive bullet lines into one section
+    } else if (/^[-•*]\s/.test(line)) {
+      const items = [];
+      while (i < lines.length && /^[-•*]\s/.test(lines[i])) {
+        items.push(lines[i].replace(/^[-•*]\s/, '').trim());
+        i++;
+      }
+      sections.push({ type: 'bullets', items });
+    // Markdown table — collect rows, skip separator rows like |---|---|
+    } else if (line.trim().startsWith('|') && line.includes('|')) {
+      const rows = [];
+      while (i < lines.length && lines[i].trim().startsWith('|')) {
+        if (!lines[i].match(/^\|[\s\-:|]+\|$/)) {
+          const cells = lines[i].split('|').slice(1, -1).map(c => c.trim()).filter(c => c !== '');
+          if (cells.length > 0) rows.push(cells);
+        }
+        i++;
+      }
+      if (rows.length > 0) sections.push({ type: 'table', rows });
+    // Blank line
+    } else if (line.trim() === '') {
+      sections.push({ type: 'blank' });
+      i++;
+    // Normal paragraph
+    } else {
+      sections.push({ type: 'para', text: line.trim() });
+      i++;
+    }
+  }
+  return sections;
 }
 
-function exportItineraryWord() {
-  const aiText  = document.getElementById('ai-box').textContent || '';
+// ── PDF EXPORT ────────────────────────────────────────────────────────────────
+function exportItineraryPDF() {
+  if (!window.jspdf?.jsPDF) { alert('PDF library is still loading — please wait a moment and try again.'); return; }
+  const aiText = document.getElementById('ai-box').textContent || '';
   if (!aiText.trim()) { alert('Generate an itinerary first.'); return; }
-  const custSel = document.getElementById('d-cust');
-  const custName = custSel?.value ? custSel.options[custSel.selectedIndex]?.text?.split(' (')[0] : 'Client';
-  const pax     = document.getElementById('d-pax')?.value || '2';
-  const month   = document.getElementById('d-month')?.value || 'Oct';
-  const tier    = document.getElementById('d-tier')?.value || '';
-  const lines   = aiText.split('\n');
-  let bodyHtml  = `<h1>THE ANT ADVENTURES</h1><p><i>Boutique Inbound Travel · Vietnam</i></p><p><b>Prepared for:</b> ${custName} &nbsp;|&nbsp; <b>Pax:</b> ${pax} &nbsp;|&nbsp; <b>Month:</b> ${month} 2026 &nbsp;|&nbsp; <b>Hotel Tier:</b> ${tier}</p><hr>`;
-  lines.forEach(line => {
-    if (line.startsWith('## '))     bodyHtml += `<h2>${line.slice(3)}</h2>`;
-    else if (line.startsWith('# ')) bodyHtml += `<h1>${line.slice(2)}</h1>`;
-    else if (line.startsWith('- ')) bodyHtml += `<li>${line.slice(2)}</li>`;
-    else if (line.trim() !== '')    bodyHtml += `<p>${line}</p>`;
+
+  const custSel  = document.getElementById('d-cust');
+  const custName = custSel?.value ? custSel.options[custSel.selectedIndex]?.text?.split(' (')[0] : 'Valued Guest';
+  const pax      = document.getElementById('d-pax')?.value || '2';
+  const month    = document.getElementById('d-month')?.value || 'Oct';
+  const tier     = document.getElementById('d-tier')?.value || '';
+  const today    = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = 210, ML = 15, MR = 15, CW = 180;
+
+  // ── HEADER: full-width green block ──
+  doc.setFillColor(46, 125, 82);      // #2E7D52
+  doc.rect(0, 0, W, 52, 'F');
+
+  // Try logo image; fall back to text
+  let logoX = ML;
+  if (_taaLogo) {
+    try { doc.addImage(_taaLogo, 'PNG', ML, 6, 32, 32); logoX = ML + 38; } catch(e) {}
+  }
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(19);
+  doc.setTextColor(255, 255, 255);
+  doc.text('THE ANT ADVENTURES', logoX, 20);
+
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(10);
+  doc.setTextColor(180, 225, 195);
+  doc.text('Boutique Inbound Travel · Vietnam', logoX, 29);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(140, 200, 165);
+  doc.text('www.theantadventures.com', logoX, 37);
+
+  // Client info — right side of header
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(255, 255, 255);
+  doc.text(custName, W - MR, 18, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(200, 235, 215);
+  doc.text(`${pax} pax · ${month} 2026`, W - MR, 27, { align: 'right' });
+  if (tier) doc.text(tier, W - MR, 35, { align: 'right' });
+  doc.text(`Prepared: ${today}`, W - MR, 44, { align: 'right' });
+
+  // Gold accent bar under header
+  doc.setFillColor(201, 168, 76);     // #C9A84C
+  doc.rect(0, 52, W, 2, 'F');
+
+  // ── CONTENT ──
+  let y = 63;
+  const parsed = parseItineraryText(aiText);
+
+  // Adds a mini header stripe on continuation pages
+  const addPage = () => {
+    doc.addPage();
+    doc.setFillColor(46, 125, 82);
+    doc.rect(0, 0, W, 9, 'F');
+    doc.setFillColor(201, 168, 76);
+    doc.rect(0, 9, W, 0.8, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(255, 255, 255);
+    doc.text('THE ANT ADVENTURES', ML, 6);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${custName} · ${month} 2026`, W - MR, 6, { align: 'right' });
+    doc.setTextColor(26, 46, 35);
+    y = 20;
+  };
+
+  const checkPage = (need = 14) => { if (y + need > 276) addPage(); };
+
+  doc.setTextColor(26, 46, 35);
+
+  for (let si = 0; si < parsed.length; si++) {
+    const s = parsed[si];
+
+    if (s.type === 'h1') {
+      checkPage(22);
+      y += 3;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(15);
+      doc.setTextColor(26, 92, 56);
+      const tLines = doc.splitTextToSize(s.text, CW);
+      doc.text(tLines, ML, y);
+      y += tLines.length * 6.5 + 2;
+      doc.setDrawColor(201, 168, 76);
+      doc.setLineWidth(1.2);
+      doc.line(ML, y - 1, ML + Math.min(s.text.length * 3.8, CW), y - 1);
+      y += 5;
+      doc.setTextColor(26, 46, 35);
+
+    } else if (s.type === 'h2') {
+      checkPage(14);
+      y += 3;
+      doc.setFillColor(232, 245, 238);    // #E8F5EE
+      doc.rect(ML - 2, y - 5, CW + 4, 9, 'F');
+      doc.setFillColor(46, 125, 82);
+      doc.rect(ML - 2, y - 5, 2.5, 9, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.setTextColor(26, 92, 56);
+      doc.text(s.text.toUpperCase(), ML + 4, y + 1);
+      y += 10;
+      doc.setTextColor(26, 46, 35);
+
+    } else if (s.type === 'bullets') {
+      for (const item of s.items) {
+        const bLines = doc.splitTextToSize(item, CW - 8);
+        checkPage(bLines.length * 5.5 + 2);
+        doc.setFillColor(46, 125, 82);
+        doc.circle(ML + 1.5, y - 1.2, 1.1, 'F');
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(42, 58, 47);
+        doc.text(bLines, ML + 6, y);
+        y += bLines.length * 5.5 + 1.5;
+      }
+      y += 2;
+
+    } else if (s.type === 'table') {
+      if (s.rows.length >= 2) {
+        checkPage(30);
+        doc.autoTable({
+          startY: y,
+          head: [s.rows[0]],
+          body: s.rows.slice(1),
+          margin: { left: ML, right: MR },
+          styles: { fontSize: 9.5, cellPadding: 4, textColor: [26, 46, 35], font: 'helvetica' },
+          headStyles: { fillColor: [46, 125, 82], textColor: [255, 255, 255], fontStyle: 'bold' },
+          alternateRowStyles: { fillColor: [247, 248, 246] },
+          tableLineColor: [226, 232, 228],
+          tableLineWidth: 0.3,
+        });
+        y = doc.lastAutoTable.finalY + 8;
+      }
+
+    } else if (s.type === 'para') {
+      const pLines = doc.splitTextToSize(s.text, CW);
+      checkPage(pLines.length * 5.5 + 2);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(42, 58, 47);
+      doc.text(pLines, ML, y);
+      y += pLines.length * 5.5 + 1.5;
+
+    } else if (s.type === 'blank') {
+      y += 3;
+    }
+  }
+
+  // ── FOOTER: stamped on every page ──
+  const total = doc.internal.getNumberOfPages();
+  for (let pg = 1; pg <= total; pg++) {
+    doc.setPage(pg);
+    const fy = 286;
+    doc.setFillColor(247, 248, 246);
+    doc.rect(0, fy - 2, W, 13, 'F');
+    doc.setDrawColor(201, 168, 76);
+    doc.setLineWidth(0.5);
+    doc.line(0, fy - 2, W, fy - 2);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(107, 127, 116);
+    doc.text('The Ant Adventures · Boutique Vietnam Inbound Travel', ML, fy + 3);
+    doc.text('taipham@theantadventures.com · www.theantadventures.com', ML, fy + 8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(46, 125, 82);
+    doc.text(`Page ${pg} / ${total}`, W - MR, fy + 3, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(201, 168, 76);
+    doc.text('Confidential Proposal', W - MR, fy + 8, { align: 'right' });
+  }
+
+  const filename = `TAA_Proposal_${custName.replace(/\s+/g,'_')}_${pax}pax_${month}2026.pdf`;
+  doc.save(filename);
+}
+
+// ── WORD EXPORT ───────────────────────────────────────────────────────────────
+async function exportItineraryWord() {
+  if (!window.docx?.Document) { alert('Word export library is still loading — please wait a moment and try again.'); return; }
+  const aiText = document.getElementById('ai-box').textContent || '';
+  if (!aiText.trim()) { alert('Generate an itinerary first.'); return; }
+
+  const custSel  = document.getElementById('d-cust');
+  const custName = custSel?.value ? custSel.options[custSel.selectedIndex]?.text?.split(' (')[0] : 'Valued Guest';
+  const pax      = document.getElementById('d-pax')?.value || '2';
+  const month    = document.getElementById('d-month')?.value || 'Oct';
+  const tier     = document.getElementById('d-tier')?.value || '';
+  const today    = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  const {
+    Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+    Footer, AlignmentType, BorderStyle, WidthType, ShadingType, PageNumber
+  } = window.docx;
+
+  // Brand colours
+  const G  = '2E7D52', GD = '1a5c38', GOLD = 'C9A84C';
+  const MUT = '6B7F74', BG = 'E8F5EE', BODY = '2a3a2f';
+
+  const borderCell = { style: BorderStyle.SINGLE, size: 1, color: 'D0E8DA' };
+  const borders = { top: borderCell, bottom: borderCell, left: borderCell, right: borderCell };
+
+  // Build children array from parsed sections
+  const children = [];
+
+  // ── BRANDED HEADER BLOCK ──
+  children.push(new Paragraph({
+    children: [new TextRun({ text: 'THE ANT ADVENTURES', bold: true, size: 52, color: 'FFFFFF', font: 'Arial' })],
+    shading: { fill: G, type: ShadingType.CLEAR },
+    spacing: { before: 0, after: 0 },
+    indent: { left: 360 }
+  }));
+  children.push(new Paragraph({
+    children: [new TextRun({ text: 'Boutique Inbound Travel  ·  Vietnam', size: 22, color: 'C8E6C9', font: 'Arial', italics: true })],
+    shading: { fill: G, type: ShadingType.CLEAR },
+    spacing: { before: 0, after: 0 },
+    indent: { left: 360 }
+  }));
+  children.push(new Paragraph({
+    children: [new TextRun({ text: 'www.theantadventures.com', size: 18, color: 'A5D6A7', font: 'Arial' })],
+    shading: { fill: G, type: ShadingType.CLEAR },
+    spacing: { before: 0, after: 200 },
+    indent: { left: 360 }
+  }));
+
+  // Gold separator line
+  children.push(new Paragraph({
+    border: { bottom: { style: BorderStyle.SINGLE, size: 14, color: GOLD, space: 1 } },
+    spacing: { before: 0, after: 240 }
+  }));
+
+  // Client metadata block
+  children.push(new Paragraph({
+    children: [
+      new TextRun({ text: 'Prepared for:  ', bold: true, size: 22, font: 'Arial', color: MUT }),
+      new TextRun({ text: custName, bold: true, size: 22, font: 'Arial', color: GD }),
+      new TextRun({ text: `    ·    ${pax} Pax    ·    ${month} 2026`, size: 22, font: 'Arial', color: MUT }),
+    ],
+    spacing: { before: 0, after: 80 }
+  }));
+  if (tier) {
+    children.push(new Paragraph({
+      children: [
+        new TextRun({ text: 'Hotel Tier:  ', bold: true, size: 20, font: 'Arial', color: MUT }),
+        new TextRun({ text: tier, size: 20, font: 'Arial', color: GD }),
+      ],
+      spacing: { before: 0, after: 80 }
+    }));
+  }
+  children.push(new Paragraph({
+    children: [new TextRun({ text: `Document prepared: ${today}`, size: 18, font: 'Arial', color: MUT, italics: true })],
+    spacing: { before: 0, after: 480 }
+  }));
+
+  // ── ITINERARY CONTENT ──
+  const parsed = parseItineraryText(aiText);
+
+  for (const s of parsed) {
+    if (s.type === 'h1') {
+      // Tour title — large dark green with gold underline
+      children.push(new Paragraph({
+        children: [new TextRun({ text: s.text, bold: true, size: 40, color: GD, font: 'Arial' })],
+        border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: GOLD, space: 4 } },
+        spacing: { before: 360, after: 200 }
+      }));
+
+    } else if (s.type === 'h2') {
+      // Section heading — green background bar, left accent
+      children.push(new Paragraph({
+        children: [new TextRun({ text: s.text.toUpperCase(), bold: true, size: 24, color: G, font: 'Arial' })],
+        shading: { fill: BG, type: ShadingType.CLEAR },
+        border: { left: { style: BorderStyle.SINGLE, size: 18, color: G, space: 6 } },
+        spacing: { before: 360, after: 120 },
+        indent: { left: 200 }
+      }));
+
+    } else if (s.type === 'bullets') {
+      for (const item of s.items) {
+        children.push(new Paragraph({
+          children: [
+            new TextRun({ text: '▪  ', color: G, size: 20, font: 'Arial' }),
+            new TextRun({ text: item, size: 20, font: 'Arial', color: BODY })
+          ],
+          spacing: { before: 80, after: 80 },
+          indent: { left: 360 }
+        }));
+      }
+
+    } else if (s.type === 'table') {
+      if (s.rows.length >= 2) {
+        const colCount  = s.rows[0].length;
+        const tblWidth  = 8640; // DXA — fits inside A4 with 1" margins
+        const colW      = Math.floor(tblWidth / colCount);
+        const colWidths = s.rows[0].map(() => colW);
+
+        const tableRows = [
+          // Header row
+          new TableRow({
+            children: s.rows[0].map(cell => new TableCell({
+              borders, width: { size: colW, type: WidthType.DXA },
+              shading: { fill: G, type: ShadingType.CLEAR },
+              margins: { top: 100, bottom: 100, left: 140, right: 140 },
+              children: [new Paragraph({
+                children: [new TextRun({ text: cell, bold: true, color: 'FFFFFF', size: 20, font: 'Arial' })],
+                alignment: AlignmentType.CENTER
+              })]
+            }))
+          }),
+          // Data rows
+          ...s.rows.slice(1).map((row, ri) => new TableRow({
+            children: row.map(cell => new TableCell({
+              borders, width: { size: colW, type: WidthType.DXA },
+              shading: { fill: ri % 2 === 0 ? 'FFFFFF' : 'F7F8F6', type: ShadingType.CLEAR },
+              margins: { top: 80, bottom: 80, left: 140, right: 140 },
+              children: [new Paragraph({
+                children: [new TextRun({ text: cell, size: 20, font: 'Arial', color: '1a2e23' })],
+                alignment: AlignmentType.CENTER
+              })]
+            }))
+          }))
+        ];
+
+        children.push(new Table({ width: { size: tblWidth, type: WidthType.DXA }, columnWidths: colWidths, rows: tableRows }));
+        children.push(new Paragraph({ spacing: { before: 160, after: 0 } }));
+      }
+
+    } else if (s.type === 'para') {
+      children.push(new Paragraph({
+        children: [new TextRun({ text: s.text, size: 20, font: 'Arial', color: BODY })],
+        spacing: { before: 80, after: 80 }
+      }));
+
+    } else if (s.type === 'blank') {
+      children.push(new Paragraph({ spacing: { before: 80, after: 80 } }));
+    }
+  }
+
+  // ── FOOTER: company info + page numbers ──
+  const footer = new Footer({
+    children: [new Paragraph({
+      children: [
+        new TextRun({ text: 'The Ant Adventures  ·  taipham@theantadventures.com  ·  www.theantadventures.com    ', size: 16, font: 'Arial', color: MUT }),
+        new TextRun({ text: 'Page ', size: 16, font: 'Arial', color: MUT }),
+        new TextRun({ children: [PageNumber.CURRENT], size: 16, font: 'Arial', color: MUT }),
+        new TextRun({ text: ' of ', size: 16, font: 'Arial', color: MUT }),
+        new TextRun({ children: [PageNumber.TOTAL_PAGES], size: 16, font: 'Arial', color: MUT }),
+      ],
+      border: { top: { style: BorderStyle.SINGLE, size: 6, color: G, space: 6 } }
+    })]
   });
-  bodyHtml += `<hr><p style="color:gray;font-size:11pt">The Ant Adventures · taipham@theantadventures.com · www.theantadventures.com</p>`;
-  const blob = new Blob(['﻿' + bodyHtml], {type:'application/msword'});
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = `TAA_Itinerary_${custName.replace(/\s+/g,'_')}_${pax}pax.doc`;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+  try {
+    const doc = new Document({
+      sections: [{
+        properties: {
+          page: {
+            size: { width: 11906, height: 16838 },   // A4 in DXA
+            margin: { top: 720, right: 1080, bottom: 1080, left: 1080 }
+          }
+        },
+        footers: { default: footer },
+        children
+      }]
+    });
+
+    const blob = await Packer.toBlob(doc);
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `TAA_Proposal_${custName.replace(/\s+/g,'_')}_${pax}pax_${month}2026.docx`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  } catch(e) {
+    console.error('Word export error:', e);
+    alert('Error generating Word document: ' + e.message);
+  }
 }
 
 function savePipeline() {
