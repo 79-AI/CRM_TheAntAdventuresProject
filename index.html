@@ -360,6 +360,7 @@ kbd{font-family:inherit}
   <div class="sbi" data-page="ai">⚡ <span data-en="AI Requirements" data-vi="Yêu cầu AI">AI Requirements</span> <span class="sb-new">NEW</span></div>
   <div class="sbi" data-page="devnotes">📝 <span data-en="Dev Notes" data-vi="Ghi chú kỹ thuật">Dev Notes</span></div>
   <div class="sbi" data-page="teamchat">💬 <span data-en="Team Chat" data-vi="Chat nội bộ">Team Chat</span> <span id="chat-unread-badge" style="display:none;background:var(--red);color:#fff;border-radius:10px;font-size:9px;padding:1px 6px;font-weight:700;margin-left:auto">0</span></div>
+  <div class="sbi" data-page="medbot">🤖 <span data-en="MedBot Report" data-vi="Bot Báo Cáo">MedBot Report</span> <span class="sb-new">NEW</span></div>
 
   <!-- ═══ THEME PICKER ═══ -->
   <div id="sb-footer" style="margin-top:auto;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);margin:auto 0 0">
@@ -4192,6 +4193,157 @@ kbd{font-family:inherit}
 
 </div>
 
+<!-- ═══════════════════ MEDBOT BÁO CÁO ═══════════════════
+     Telegram-style daily reporting bot for all staff.
+     Left panel: chat bot flow. Right panel: CEO summary dashboard.
+     BACKEND NEEDED: Save reports to DB via API on submission.
+     DB TABLE NEEDED: medbot_staff(id, name, initials, active, sort_order)
+     DB TABLE NEEDED: medbot_reports(id, staff_id, date, orders, quotes, new_clients, highlights, rating, issues, tomorrow, submitted_at)
+-->
+<div class="page" id="page-medbot">
+
+  <!-- Two-panel wrapper -->
+  <div style="display:flex;gap:16px;min-height:620px;align-items:flex-start">
+
+    <!-- ─── LEFT: CHAT BOT PANEL ─── -->
+    <div style="width:360px;min-width:300px;flex-shrink:0;display:flex;flex-direction:column;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.12);height:700px">
+
+      <!-- Telegram-style header -->
+      <div style="background:#075E54;color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0">
+        <div style="width:42px;height:42px;border-radius:50%;background:#128C7E;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🤖</div>
+        <div>
+          <div style="font-weight:700;font-size:14px">MedBot – Bot Báo Cáo</div>
+          <div style="font-size:11px;opacity:0.8">● Đang hoạt động · Mô phỏng Telegram</div>
+        </div>
+      </div>
+
+      <!-- Staff selector dropdown -->
+      <div style="background:#fff;padding:10px 12px;border-bottom:1px solid #ddd;flex-shrink:0">
+        <select id="mb-staff-select" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;background:#fff" onchange="mbSelectStaff(this.value)">
+          <option value="">— Chọn nhân viên để báo cáo —</option>
+        </select>
+      </div>
+
+      <!-- Chat messages area -->
+      <div id="mb-chat" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;background:#ECE5DD">
+        <div id="mb-ready-state" style="text-align:center;padding:40px 20px;color:#666">
+          <div style="font-size:48px;margin-bottom:10px">🤖</div>
+          <div style="font-weight:700;font-size:15px;color:#075E54;margin-bottom:6px">MedBot sẵn sàng!</div>
+          <div style="font-size:12.5px;line-height:1.6;color:#888">Chọn tên nhân viên ở trên<br>để bắt đầu báo cáo</div>
+        </div>
+      </div>
+
+      <!-- Input area (hidden until staff selected) -->
+      <div id="mb-input-area" style="background:#f0f0f0;padding:8px 10px;flex-shrink:0;display:none">
+        <div id="mb-quicktap" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;padding:2px 0"></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="mb-text-input" type="text" placeholder="Nhập tin nhắn..."
+            style="flex:1;padding:10px 14px;border:none;border-radius:22px;font-size:13px;outline:none;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.1)"
+            onkeydown="if(event.key==='Enter')mbSendText()">
+          <button onclick="mbSendText()"
+            style="width:42px;height:42px;border-radius:50%;background:#128C7E;border:none;cursor:pointer;font-size:16px;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── RIGHT: CEO DASHBOARD ─── -->
+    <div style="flex:1;display:flex;flex-direction:column;gap:14px;min-width:0">
+
+      <!-- Dashboard header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-size:18px;font-weight:700;color:var(--gd)">📊 Tổng hợp hôm nay</div>
+          <div style="font-size:12.5px;color:var(--m);margin-top:2px" id="mb-date-label"></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" onclick="mbRefreshDashboard()">🔄 Refresh</button>
+          <button class="btn" onclick="mbViewEmail()">📧 Xem Email</button>
+          <button class="btn btn-p" onclick="mbAdminPanel()">⚙️ Quản lý NV</button>
+        </div>
+      </div>
+
+      <!-- KPI cards row -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+        <div class="card" style="text-align:center;padding:18px 12px;border-top:3px solid #2E7D52">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--m);margin-bottom:8px">📦 ĐƠN HÀNG</div>
+          <div id="mb-kpi-orders" style="font-size:34px;font-weight:800;color:var(--gd)">0</div>
+        </div>
+        <div class="card" style="text-align:center;padding:18px 12px;border-top:3px solid #1565C0">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--m);margin-bottom:8px">📋 BÁO GIÁ</div>
+          <div id="mb-kpi-quotes" style="font-size:34px;font-weight:800;color:#1565C0">0</div>
+        </div>
+        <div class="card" style="text-align:center;padding:18px 12px;border-top:3px solid #6B21A8">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--m);margin-bottom:8px">🆕 KH MỚI</div>
+          <div id="mb-kpi-clients" style="font-size:34px;font-weight:800;color:#6B21A8">0</div>
+        </div>
+      </div>
+
+      <!-- Bar chart + Status list side by side -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+
+        <!-- Orders by staff bar chart -->
+        <div class="card">
+          <div class="card-hd"><span class="card-title">📈 Đơn hàng theo nhân viên</span></div>
+          <div class="card-body" id="mb-bar-chart" style="padding:12px 14px"></div>
+        </div>
+
+        <!-- Report status tracker -->
+        <div class="card">
+          <div class="card-hd" style="display:flex;align-items:center;justify-content:space-between">
+            <span class="card-title">📋 Trạng thái báo cáo</span>
+            <span id="mb-status-count" style="font-size:12px;color:var(--m);font-weight:600">0/0 người</span>
+          </div>
+          <div id="mb-status-list" style="padding:8px;display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto"></div>
+        </div>
+      </div>
+
+      <!-- Email preview panel (toggle) -->
+      <div id="mb-email-preview" style="display:none">
+        <div class="card">
+          <div class="card-hd" style="background:#E8F5EE;display:flex;align-items:center;justify-content:space-between">
+            <span class="card-title" style="color:var(--gd)">📧 Preview Email Báo Cáo</span>
+            <button onclick="document.getElementById('mb-email-preview').style.display='none'"
+              style="border:none;background:none;cursor:pointer;font-size:18px;color:var(--m);line-height:1">✕</button>
+          </div>
+          <div class="card-body" id="mb-email-content"
+            style="font-family:monospace;font-size:12px;white-space:pre-wrap;background:#f9fafb;padding:16px;max-height:380px;overflow-y:auto;border-radius:0 0 10px 10px"></div>
+        </div>
+      </div>
+
+    </div><!-- /right panel -->
+  </div><!-- /two-panel -->
+
+  <!-- ─── ADMIN MODAL ─── -->
+  <div id="mb-admin-overlay"
+    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9000;align-items:center;justify-content:center">
+    <div style="background:#fff;border-radius:12px;width:500px;max-width:95vw;padding:24px;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="font-size:16px;font-weight:700;color:var(--gd)">⚙️ Quản lý nhân viên MedBot</div>
+        <button onclick="mbCloseAdmin()" style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--m);line-height:1">✕</button>
+      </div>
+      <div style="font-size:12.5px;color:var(--m);margin-bottom:12px">Thêm hoặc chỉnh sửa danh sách nhân viên. Nhân viên bị ẩn sẽ không xuất hiện trong bot.</div>
+      <!-- Add staff input -->
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <input id="mb-admin-name" type="text" placeholder="Tên đầy đủ (vd: Nguyễn Văn A)"
+          style="flex:1;padding:9px 12px;border:1px solid var(--b);border-radius:8px;font-size:13px"
+          onkeydown="if(event.key==='Enter')mbAdminAddStaff()">
+        <button class="btn btn-p" onclick="mbAdminAddStaff()">+ Thêm</button>
+      </div>
+      <!-- Staff list -->
+      <div id="mb-admin-list" style="display:flex;flex-direction:column;gap:8px"></div>
+      <!-- Footer actions -->
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--b);display:flex;gap:8px;justify-content:space-between;align-items:center">
+        <button onclick="mbClearTodayReports()"
+          style="padding:8px 14px;border:1.5px solid var(--red);background:#fff;color:var(--red);border-radius:8px;cursor:pointer;font-size:12.5px">
+          🗑 Xóa báo cáo hôm nay
+        </button>
+        <button class="btn btn-p" onclick="mbCloseAdmin()">✓ Xong</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page-medbot -->
+
   </div><!-- /content -->
 </div><!-- /main -->
 </div><!-- /app -->
@@ -5132,7 +5284,7 @@ function persist() {
 const DUR_LABELS = {'0.5':'Half Day','1':'Full Day','2':'2D1N','3':'3D2N','4':'4D3N'};
 const REGIONS = {north:'Northern VN',central:'Central VN',south:'Southern VN',full:'Full Route'};
 const REG_COLORS = {north:['#E8F5EE','#1a5c38'],central:['#FFF3CD','#856404'],south:['#E1F0FF','#0c5464'],full:['#F3E5F5','#4a1460']};
-const PAGE_TITLES = {dashboard:'Dashboard',planner:'Daily Planner',customers:'Clients',sales:'Sales Pipeline',tourdesign:'Tour Design Studio ✦',products:'Tour Products',gallery:'Photo Gallery',pricing:'Pricing',bookings:'Bookings',suppliers:'Suppliers',guides:'Guides',weather:'Weather Guide',attractions:'Attraction Schedule 🏛',posttour:'Post-Tour & Feedback ⭐',finance:'Finance',tax:'Tax',salary:'Salary',about:'About Us',culture:'Culture',regulations:'Regulations',hr:'Human Resources',training:'Staff Training Academy 🎓',ai:'AI Requirements ⚡',devnotes:'Dev Notes 📝',teamchat:'Team Chat 💬'};
+const PAGE_TITLES = {dashboard:'Dashboard',planner:'Daily Planner',customers:'Clients',sales:'Sales Pipeline',tourdesign:'Tour Design Studio ✦',products:'Tour Products',gallery:'Photo Gallery',pricing:'Pricing',bookings:'Bookings',suppliers:'Suppliers',guides:'Guides',weather:'Weather Guide',attractions:'Attraction Schedule 🏛',posttour:'Post-Tour & Feedback ⭐',finance:'Finance',tax:'Tax',salary:'Salary',about:'About Us',culture:'Culture',regulations:'Regulations',hr:'Human Resources',training:'Staff Training Academy 🎓',ai:'AI Requirements ⚡',devnotes:'Dev Notes 📝',teamchat:'Team Chat 💬',medbot:'🤖 MedBot – Bot Báo Cáo'};
 const STAGE_COLORS = {Inquiry:'bdg-b',Designing:'bdg-a',Quoted:'bdg-a',Negotiation:'bdg-a',Confirmed:'bdg-g',Completed:'bdg-w',Lost:'bdg-r'};
 const STAGE_PROB    = {Inquiry:10, Designing:25, Quoted:50, Negotiation:70, Confirmed:95, Completed:100, Lost:0};
 const SRC_COLORS = {Referral:'bdg-g',Website:'bdg-b',Agent:'bdg-a',Virtuoso:'bdg-p',Abercrombie:'bdg-p'};
@@ -5195,6 +5347,7 @@ function nav(page, el) {
   if (page === 'ai')       loadAIRequirements();
   if (page === 'devnotes')  renderDevNotes();
   if (page === 'teamchat')  initChat();
+  if (page === 'medbot')    mbInit();
   if (page === 'planner')  { renderPlanner(); }
   if (page === 'guides')   renderGuides();
   // Sync topbar title with current language
@@ -18441,6 +18594,495 @@ function renderTrCurric() {
 }
 
 // ── END STAFF TRAINING ACADEMY ─────────────────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SECTION: MEDBOT – BOT BÁO CÁO (Daily Staff Reporting Bot)
+// Telegram-style chat bot for end-of-day staff reporting.
+// Staff select their name, bot walks through questions, CEO sees dashboard.
+// localStorage: ant_medbot_staff (staff list), ant_medbot_reports (all reports)
+// BACKEND NEEDED: POST /api/medbot/report — save report to DB on submission
+// DB TABLE NEEDED: medbot_staff(id, name, initials, active, sort_order, created_at)
+// DB TABLE NEEDED: medbot_reports(id, staff_id, date, orders, quotes, new_clients, highlights, rating, issues, tomorrow, submitted_at)
+// ══════════════════════════════════════════════════════════════════════════════
+
+let MB_STAFF   = [];
+let MB_REPORTS = [];
+let mbCurrentStaffId = null;
+let mbBotStep  = 0;
+let mbBotData  = {};
+
+// ── BOT QUESTION SEQUENCE ──────────────────────────────────────────────────
+const MB_QUESTIONS = [
+  { key:'orders',     text:'Hôm nay bạn xử lý được bao nhiêu đơn hàng? 📦',            type:'quicktap', options:['0','1','2','3','5','10+'], skip:null },
+  { key:'quotes',     text:'Bao nhiêu báo giá đã gửi hôm nay? 📋',                      type:'quicktap', options:['0','1','2','3','5+'],    skip:null },
+  { key:'newClients', text:'Khách hàng mới tiếp cận hôm nay? 🆕',                       type:'quicktap', options:['0','1','2','3+'],         skip:null },
+  { key:'highlights', text:'Kết quả nổi bật hôm nay là gì? 🏆\n(Nhập "bỏ qua" nếu không có)', type:'text', skip:'Bỏ qua' },
+  { key:'rating',     text:'Tự đánh giá ngày hôm nay của bạn? ⭐',                      type:'stars',    skip:null },
+  { key:'issues',     text:'Có vấn đề gì cần sếp biết không? ⚠️\n(Nhập "không" nếu ổn)', type:'text',   skip:'Không' },
+  { key:'tomorrow',   text:'Kế hoạch ngày mai của bạn là gì? 📋\n(Gõ tóm tắt nhanh)',  type:'text',     skip:'Bỏ qua' },
+];
+
+const MB_COLORS = ['#128C7E','#075E54','#1565C0','#6B21A8','#C0392B','#D97706','#2E7D52','#E91E63','#FF5722','#0097A7','#795548','#607D8B'];
+
+// ── HELPERS ────────────────────────────────────────────────────────────────
+function mbTodayKey() { return new Date().toISOString().slice(0,10); }
+function mbSave()     { LS.set('ant_medbot_staff', MB_STAFF); LS.set('ant_medbot_reports', MB_REPORTS); }
+function mbStaffColor(id) { const i = MB_STAFF.findIndex(s => s.id === id); return MB_COLORS[i % MB_COLORS.length]; }
+
+function mbGetInitials(name) {
+  const p = name.trim().split(' ').filter(Boolean);
+  if (p.length >= 2) return (p[0][0] + p[p.length-1][0]).toUpperCase();
+  return name.slice(0,2).toUpperCase();
+}
+
+function mbGetTodayReports() {
+  return MB_REPORTS.filter(r => r.date === mbTodayKey());
+}
+
+function mbTimeStr() {
+  return new Date().toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'});
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+function mbInit() {
+  MB_STAFF   = LS.get('ant_medbot_staff',   []);
+  MB_REPORTS = LS.get('ant_medbot_reports', []);
+
+  // Set date label
+  const d    = new Date();
+  const days = ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];
+  const el   = document.getElementById('mb-date-label');
+  if (el) el.textContent = days[d.getDay()] + ', ' + String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0');
+
+  mbPopulateSelect();
+  mbRefreshDashboard();
+
+  // Reset chat to ready state
+  const chat = document.getElementById('mb-chat');
+  if (chat) {
+    chat.innerHTML = '<div id="mb-ready-state" style="text-align:center;padding:40px 20px;color:#666"><div style="font-size:48px;margin-bottom:10px">🤖</div><div style="font-weight:700;font-size:15px;color:#075E54;margin-bottom:6px">MedBot sẵn sàng!</div><div style="font-size:12.5px;line-height:1.6;color:#888">Chọn tên nhân viên ở trên<br>để bắt đầu báo cáo</div></div>';
+  }
+  const inputArea = document.getElementById('mb-input-area');
+  if (inputArea) inputArea.style.display = 'none';
+  const sel = document.getElementById('mb-staff-select');
+  if (sel) sel.value = '';
+  mbCurrentStaffId = null;
+  mbBotStep = 0;
+  mbBotData = {};
+}
+
+// ── STAFF DROPDOWN ─────────────────────────────────────────────────────────
+function mbPopulateSelect() {
+  const sel = document.getElementById('mb-staff-select');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Chọn nhân viên để báo cáo —</option>';
+  MB_STAFF.filter(s => s.active).forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = s.name;
+    sel.appendChild(opt);
+  });
+}
+
+// ── SELECT STAFF & START BOT ───────────────────────────────────────────────
+function mbSelectStaff(staffId) {
+  if (!staffId) return;
+  mbCurrentStaffId = staffId;
+  const staff = MB_STAFF.find(s => s.id === staffId);
+  if (!staff) return;
+
+  mbBotStep = 0;
+  mbBotData = {};
+
+  const chat = document.getElementById('mb-chat');
+  if (!chat) return;
+  chat.innerHTML = ''; // Clear ready state
+
+  const today    = mbTodayKey();
+  const existing = MB_REPORTS.find(r => r.staffId === staffId && r.date === today);
+
+  if (existing) {
+    // Already reported today
+    mbBotMessage('Chào ' + staff.name.split(' ').pop() + '! 👋');
+    setTimeout(() => {
+      mbBotMessage('Bạn đã báo cáo hôm nay rồi nhé. Cảm ơn! ✅\n\n📊 Tóm tắt của bạn:\n• Đơn hàng: ' + existing.orders + '\n• Báo giá: ' + existing.quotes + '\n• Khách mới: ' + existing.newClients + '\n• Tự đánh giá: ' + '⭐'.repeat(existing.rating || 0));
+    }, 600);
+    document.getElementById('mb-input-area').style.display = 'none';
+  } else {
+    mbBotMessage('Chào ' + staff.name.split(' ').pop() + '! 👋 Hãy điền báo cáo cuối ngày nhé!');
+    setTimeout(() => mbAskQuestion(), 800);
+    document.getElementById('mb-input-area').style.display = 'block';
+  }
+}
+
+// ── CHAT BUBBLE HELPERS ────────────────────────────────────────────────────
+function mbBotMessage(text) {
+  const chat = document.getElementById('mb-chat');
+  if (!chat) return;
+  const lines = text.split('\n').map(l => l === '' ? '<br>' : l).join('<br>');
+  const el = document.createElement('div');
+  el.style.cssText = 'display:flex;align-items:flex-start;gap:6px;max-width:88%';
+  el.innerHTML = '<div style="width:28px;height:28px;border-radius:50%;background:#128C7E;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;margin-top:2px">🤖</div>'
+    + '<div style="background:#fff;border-radius:4px 16px 16px 16px;padding:9px 13px;font-size:13px;line-height:1.55;color:#1a1a1a;box-shadow:0 1px 2px rgba(0,0,0,0.1);max-width:calc(100% - 40px)">'
+    + lines
+    + '<div style="font-size:10px;color:#aaa;text-align:right;margin-top:5px">' + mbTimeStr() + '</div></div>';
+  chat.appendChild(el);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function mbUserMessage(text) {
+  const chat = document.getElementById('mb-chat');
+  if (!chat) return;
+  const el = document.createElement('div');
+  el.style.cssText = 'display:flex;justify-content:flex-end;width:100%';
+  el.innerHTML = '<div style="background:#DCF8C6;border-radius:16px 4px 16px 16px;padding:9px 13px;font-size:13px;line-height:1.55;color:#1a1a1a;box-shadow:0 1px 2px rgba(0,0,0,0.1);max-width:80%">'
+    + text
+    + '<div style="font-size:10px;color:#aaa;text-align:right;margin-top:5px">' + mbTimeStr() + '</div></div>';
+  chat.appendChild(el);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+// ── ASK NEXT QUESTION ─────────────────────────────────────────────────────
+function mbAskQuestion() {
+  if (mbBotStep >= MB_QUESTIONS.length) { mbSubmitReport(); return; }
+  const q = MB_QUESTIONS[mbBotStep];
+  mbBotMessage(q.text);
+
+  const quicktap  = document.getElementById('mb-quicktap');
+  const textInput = document.getElementById('mb-text-input');
+  if (!quicktap || !textInput) return;
+
+  quicktap.innerHTML = '';
+
+  if (q.type === 'quicktap') {
+    textInput.style.display = 'none';
+    q.options.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.textContent = opt;
+      btn.style.cssText = 'padding:6px 14px;border-radius:20px;border:1.5px solid #128C7E;background:#fff;color:#128C7E;cursor:pointer;font-size:13px;font-weight:600;transition:all 0.15s';
+      btn.onmouseover = () => { btn.style.background = '#128C7E'; btn.style.color = '#fff'; };
+      btn.onmouseout  = () => { btn.style.background = '#fff';    btn.style.color = '#128C7E'; };
+      btn.onclick = () => mbHandleAnswer(opt);
+      quicktap.appendChild(btn);
+    });
+  } else if (q.type === 'stars') {
+    textInput.style.display = 'none';
+    [1,2,3,4,5].forEach(n => {
+      const btn = document.createElement('button');
+      btn.textContent = '⭐'.repeat(n) + ' ' + n;
+      btn.style.cssText = 'padding:6px 14px;border-radius:20px;border:1.5px solid #C9A84C;background:#fff;color:#333;cursor:pointer;font-size:13px;transition:all 0.15s';
+      btn.onmouseover = () => { btn.style.background = '#FDF6E3'; };
+      btn.onmouseout  = () => { btn.style.background = '#fff'; };
+      btn.onclick = () => mbHandleAnswer(String(n));
+      quicktap.appendChild(btn);
+    });
+  } else {
+    // Text input
+    textInput.style.display = 'block';
+    textInput.value = '';
+    textInput.placeholder = q.skip ? ('Nhập hoặc nhấn "' + q.skip + '"...') : 'Nhập tin nhắn...';
+    if (q.skip) {
+      const skipBtn = document.createElement('button');
+      skipBtn.textContent = q.skip;
+      skipBtn.style.cssText = 'padding:6px 14px;border-radius:20px;border:1.5px solid #aaa;background:#fff;color:#666;cursor:pointer;font-size:13px';
+      skipBtn.onclick = () => mbHandleAnswer('__skip__');
+      quicktap.appendChild(skipBtn);
+    }
+    setTimeout(() => textInput.focus(), 100);
+  }
+}
+
+// ── SEND TEXT INPUT ────────────────────────────────────────────────────────
+function mbSendText() {
+  const input = document.getElementById('mb-text-input');
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  mbHandleAnswer(text);
+}
+
+// ── HANDLE ANSWER ──────────────────────────────────────────────────────────
+function mbHandleAnswer(value) {
+  if (mbBotStep >= MB_QUESTIONS.length) return;
+  const q = MB_QUESTIONS[mbBotStep];
+
+  // Display user bubble
+  const isSkipCmd = value === '__skip__';
+  const displayVal = isSkipCmd ? (q.skip || 'Bỏ qua') : (q.type === 'stars' ? '⭐'.repeat(parseInt(value)) : value);
+  mbUserMessage(displayVal);
+
+  // Store value
+  if (isSkipCmd || (q.skip && value.toLowerCase() === q.skip.toLowerCase())) {
+    mbBotData[q.key] = null;
+  } else if (q.type === 'quicktap') {
+    const numVal = value.replace('+','');
+    mbBotData[q.key] = parseInt(numVal) || 0;
+  } else if (q.type === 'stars') {
+    mbBotData[q.key] = parseInt(value) || 3;
+  } else {
+    mbBotData[q.key] = value;
+  }
+
+  mbBotStep++;
+
+  // Clear quick-tap buttons while waiting
+  const quicktap = document.getElementById('mb-quicktap');
+  if (quicktap) quicktap.innerHTML = '';
+  const textInput = document.getElementById('mb-text-input');
+  if (textInput) { textInput.style.display = 'none'; textInput.value = ''; }
+
+  setTimeout(() => {
+    if (mbBotStep < MB_QUESTIONS.length) {
+      mbAskQuestion();
+    } else {
+      mbSubmitReport();
+    }
+  }, 500);
+}
+
+// ── SUBMIT REPORT ──────────────────────────────────────────────────────────
+function mbSubmitReport() {
+  const staff = MB_STAFF.find(s => s.id === mbCurrentStaffId);
+  if (!staff) return;
+
+  const report = {
+    id:         'mbr_' + Date.now(),
+    staffId:    mbCurrentStaffId,
+    staffName:  staff.name,
+    date:       mbTodayKey(),
+    orders:     mbBotData.orders     || 0,
+    quotes:     mbBotData.quotes     || 0,
+    newClients: mbBotData.newClients || 0,
+    highlights: mbBotData.highlights || null,
+    rating:     mbBotData.rating     || 3,
+    issues:     mbBotData.issues     || null,
+    tomorrow:   mbBotData.tomorrow   || null,
+    submittedAt: new Date().toISOString(),
+  };
+
+  // Remove any earlier submission today for this staff member
+  MB_REPORTS = MB_REPORTS.filter(r => !(r.staffId === mbCurrentStaffId && r.date === mbTodayKey()));
+  MB_REPORTS.push(report);
+  mbSave();
+
+  // Confirmation message
+  const stars = '⭐'.repeat(report.rating);
+  mbBotMessage('✅ Cảm ơn ' + staff.name.split(' ').pop() + '! Báo cáo đã được lưu.\n\n📊 Tóm tắt hôm nay:\n• Đơn hàng: ' + report.orders + '\n• Báo giá: ' + report.quotes + '\n• Khách mới: ' + report.newClients + '\n• Tự đánh giá: ' + stars + '\n\nChờ các bạn khác báo cáo nốt nhé 💪');
+
+  // Hide input
+  const inputArea = document.getElementById('mb-input-area');
+  if (inputArea) inputArea.style.display = 'none';
+
+  // Refresh dashboard after short delay
+  setTimeout(() => mbRefreshDashboard(), 600);
+
+  // Reset selector
+  const sel = document.getElementById('mb-staff-select');
+  if (sel) sel.value = '';
+  mbCurrentStaffId = null;
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────
+function mbRefreshDashboard() {
+  MB_STAFF   = LS.get('ant_medbot_staff',   []);
+  MB_REPORTS = LS.get('ant_medbot_reports', []);
+  const today = mbGetTodayReports();
+
+  const totalOrders  = today.reduce((s,r) => s + (r.orders     || 0), 0);
+  const totalQuotes  = today.reduce((s,r) => s + (r.quotes     || 0), 0);
+  const totalClients = today.reduce((s,r) => s + (r.newClients || 0), 0);
+
+  const kpiO = document.getElementById('mb-kpi-orders');
+  const kpiQ = document.getElementById('mb-kpi-quotes');
+  const kpiC = document.getElementById('mb-kpi-clients');
+  if (kpiO) kpiO.textContent = totalOrders;
+  if (kpiQ) kpiQ.textContent = totalQuotes;
+  if (kpiC) kpiC.textContent = totalClients;
+
+  mbRenderBarChart(today);
+  mbRenderStatusList(today);
+}
+
+function mbRenderBarChart(todayReports) {
+  const el = document.getElementById('mb-bar-chart');
+  if (!el) return;
+
+  const active = MB_STAFF.filter(s => s.active);
+  if (active.length === 0) {
+    el.innerHTML = '<div style="color:#999;font-size:12px;text-align:center;padding:24px">Chưa có nhân viên.<br>Thêm trong ⚙️ Quản lý NV.</div>';
+    return;
+  }
+
+  const maxVal = Math.max(1, ...active.map(s => {
+    const r = todayReports.find(r => r.staffId === s.id);
+    return r ? (r.orders || 0) : 0;
+  }));
+
+  el.innerHTML = active.map(s => {
+    const r     = todayReports.find(r => r.staffId === s.id);
+    const val   = r ? (r.orders || 0) : 0;
+    const pct   = Math.max(3, Math.round((val / maxVal) * 100));
+    const label = s.name.split(' ').pop(); // Last word (first name in VN)
+    const color = val > 0 ? '#FF6B00' : '#ddd';
+    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">'
+      + '<div style="width:62px;font-size:12px;color:#444;text-align:right;flex-shrink:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">' + label + '</div>'
+      + '<div style="flex:1;background:#f0f0f0;border-radius:4px;height:20px;position:relative;overflow:hidden">'
+      + '<div style="width:' + pct + '%;background:' + color + ';height:100%;border-radius:4px;transition:width 0.5s ease"></div>'
+      + '</div>'
+      + '<div style="width:26px;height:26px;border-radius:50%;background:' + color + ';color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + val + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+function mbRenderStatusList(todayReports) {
+  const el      = document.getElementById('mb-status-list');
+  const countEl = document.getElementById('mb-status-count');
+  if (!el) return;
+
+  const active   = MB_STAFF.filter(s => s.active);
+  const reported = active.filter(s => todayReports.find(r => r.staffId === s.id));
+
+  if (countEl) countEl.textContent = reported.length + '/' + active.length + ' người';
+
+  if (active.length === 0) {
+    el.innerHTML = '<div style="color:#999;font-size:12px;text-align:center;padding:20px">Chưa có nhân viên.<br>Thêm trong ⚙️ Quản lý NV.</div>';
+    return;
+  }
+
+  el.innerHTML = active.map(s => {
+    const r        = todayReports.find(r => r.staffId === s.id);
+    const initials = s.initials || mbGetInitials(s.name);
+    const done     = !!r;
+    const color    = mbStaffColor(s.id);
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:' + (done?'#F0FFF4':'#FFFBEB') + ';border:1px solid ' + (done?'#A7F3D0':'#FCD34D') + '">'
+      + '<div style="width:32px;height:32px;border-radius:50%;background:' + color + ';color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + initials + '</div>'
+      + '<div style="flex:1;font-size:13px;font-weight:600;color:#1a2e23;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">' + s.name + '</div>'
+      + '<div style="font-size:12px;flex-shrink:0;' + (done?'color:#065F46':'color:#92400E') + '">' + (done?'✅ Đã báo cáo':'⏳ Chờ') + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+// ── EMAIL PREVIEW ──────────────────────────────────────────────────────────
+function mbViewEmail() {
+  const previewEl = document.getElementById('mb-email-preview');
+  const contentEl = document.getElementById('mb-email-content');
+  if (!previewEl || !contentEl) return;
+
+  // Toggle
+  if (previewEl.style.display !== 'none') { previewEl.style.display = 'none'; return; }
+
+  const today  = mbGetTodayReports();
+  const active = MB_STAFF.filter(s => s.active);
+  const d      = new Date();
+  const dateStr= String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
+
+  const totalOrders  = today.reduce((s,r) => s + (r.orders     || 0), 0);
+  const totalQuotes  = today.reduce((s,r) => s + (r.quotes     || 0), 0);
+  const totalClients = today.reduce((s,r) => s + (r.newClients || 0), 0);
+  const doneCount    = active.filter(s => today.find(r => r.staffId === s.id)).length;
+
+  let txt = '📊 BÁO CÁO CUỐI NGÀY — ' + dateStr + '\n';
+  txt += 'The Ant Adventures\n';
+  txt += '─'.repeat(44) + '\n\n';
+  txt += 'TỔNG HỢP HÔM NAY:\n';
+  txt += '  • Đơn hàng:  ' + totalOrders  + '\n';
+  txt += '  • Báo giá:   ' + totalQuotes  + '\n';
+  txt += '  • Khách mới: ' + totalClients + '\n';
+  txt += '  • Đã báo cáo: ' + doneCount + '/' + active.length + ' nhân viên\n\n';
+  txt += '─'.repeat(44) + '\n\nCHI TIẾT TỪNG NHÂN VIÊN:\n\n';
+
+  active.forEach(s => {
+    const r = today.find(r => r.staffId === s.id);
+    if (r) {
+      txt += '👤 ' + s.name + '\n';
+      txt += '   Đơn hàng: ' + r.orders + '  |  Báo giá: ' + r.quotes + '  |  Khách mới: ' + r.newClients + '\n';
+      txt += '   Tự đánh giá: ' + '⭐'.repeat(r.rating || 0) + '\n';
+      if (r.highlights) txt += '   Nổi bật: ' + r.highlights + '\n';
+      if (r.issues)     txt += '   ⚠️ Vấn đề: ' + r.issues + '\n';
+      if (r.tomorrow)   txt += '   📋 Kế hoạch mai: ' + r.tomorrow + '\n';
+    } else {
+      txt += '👤 ' + s.name + ' — ⏳ Chưa báo cáo\n';
+    }
+    txt += '\n';
+  });
+
+  txt += '─'.repeat(44) + '\n';
+  txt += 'Gửi từ MedBot CRM · The Ant Adventures';
+
+  contentEl.textContent = txt;
+  previewEl.style.display = 'block';
+  previewEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ── ADMIN PANEL ────────────────────────────────────────────────────────────
+function mbAdminPanel() {
+  MB_STAFF = LS.get('ant_medbot_staff', []);
+  const overlay = document.getElementById('mb-admin-overlay');
+  if (overlay) { overlay.style.display = 'flex'; mbRenderAdminList(); }
+}
+
+function mbCloseAdmin() {
+  const overlay = document.getElementById('mb-admin-overlay');
+  if (overlay) overlay.style.display = 'none';
+  mbPopulateSelect();
+  mbRefreshDashboard();
+}
+
+function mbRenderAdminList() {
+  const el = document.getElementById('mb-admin-list');
+  if (!el) return;
+  if (MB_STAFF.length === 0) {
+    el.innerHTML = '<div style="color:#999;font-size:13px;text-align:center;padding:20px;background:#f7f8f6;border-radius:8px">Chưa có nhân viên nào.<br>Thêm tên ở ô bên trên.</div>';
+    return;
+  }
+  el.innerHTML = MB_STAFF.map((s, i) =>
+    '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#F7F8F6;border-radius:8px;border:1px solid #E2E8E4">'
+    + '<div style="width:36px;height:36px;border-radius:50%;background:' + mbStaffColor(s.id) + ';color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + (s.initials || mbGetInitials(s.name)) + '</div>'
+    + '<div style="flex:1;font-size:13.5px;font-weight:600;color:#1a2e23">' + s.name + '</div>'
+    + '<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;white-space:nowrap">'
+    + '<input type="checkbox" ' + (s.active?'checked':'') + ' onchange="mbToggleStaff(\'' + s.id + '\',this.checked)" style="cursor:pointer"> Hiển thị</label>'
+    + '<button onclick="mbDeleteStaff(\'' + s.id + '\')" style="border:none;background:none;cursor:pointer;color:var(--red);font-size:16px;padding:4px;line-height:1" title="Xóa">🗑</button>'
+    + '</div>'
+  ).join('');
+}
+
+function mbAdminAddStaff() {
+  const input = document.getElementById('mb-admin-name');
+  if (!input) return;
+  const name = input.value.trim();
+  if (!name) { input.focus(); return; }
+  MB_STAFF.push({ id:'mb_' + Date.now(), name, initials:mbGetInitials(name), active:true });
+  mbSave();
+  input.value = '';
+  input.focus();
+  mbRenderAdminList();
+}
+
+function mbToggleStaff(id, active) {
+  const s = MB_STAFF.find(s => s.id === id);
+  if (s) { s.active = active; mbSave(); mbRenderAdminList(); }
+}
+
+function mbDeleteStaff(id) {
+  if (!confirm('Xóa nhân viên này khỏi danh sách?\n(Báo cáo đã lưu sẽ không bị xóa.)')) return;
+  MB_STAFF = MB_STAFF.filter(s => s.id !== id);
+  mbSave();
+  mbRenderAdminList();
+}
+
+function mbClearTodayReports() {
+  const today = mbTodayKey();
+  const count = MB_REPORTS.filter(r => r.date === today).length;
+  if (count === 0) { alert('Hôm nay chưa có báo cáo nào.'); return; }
+  if (!confirm('Xóa tất cả ' + count + ' báo cáo hôm nay? Thao tác này không thể hoàn tác.')) return;
+  MB_REPORTS = MB_REPORTS.filter(r => r.date !== today);
+  mbSave();
+  mbRefreshDashboard();
+  mbCloseAdmin();
+}
+
+// ── END MEDBOT ─────────────────────────────────────────────────────────────
 
 </script>
 
