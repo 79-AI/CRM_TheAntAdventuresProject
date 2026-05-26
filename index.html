@@ -361,6 +361,7 @@ kbd{font-family:inherit}
   <div class="sbi" data-page="devnotes">📝 <span data-en="Dev Notes" data-vi="Ghi chú kỹ thuật">Dev Notes</span></div>
   <div class="sbi" data-page="teamchat">💬 <span data-en="Team Chat" data-vi="Chat nội bộ">Team Chat</span> <span id="chat-unread-badge" style="display:none;background:var(--red);color:#fff;border-radius:10px;font-size:9px;padding:1px 6px;font-weight:700;margin-left:auto">0</span></div>
   <div class="sbi" data-page="medbot">🤖 <span data-en="MedBot Report" data-vi="Bot Báo Cáo">MedBot Report</span> <span class="sb-new">NEW</span></div>
+  <div class="sbi" data-page="settings">⚙ <span data-en="Settings" data-vi="Cài đặt">Settings</span></div>
 
   <!-- ═══ THEME PICKER ═══ -->
   <div id="sb-footer" style="margin-top:auto;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);margin:auto 0 0">
@@ -1382,7 +1383,7 @@ kbd{font-family:inherit}
           <div class="fg"><label class="lbl" data-en="Meals/pax/day ($)" data-vi="Ăn uống/khách/ngày ($)">Meals/pax/day ($)</label><input type="number" id="cb-meals" value="25" oninput="calcCostBuilder()"></div>
           <div class="fg"><label class="lbl" data-en="Entrance fees/pax ($)" data-vi="Vé tham quan/khách ($)">Entrance fees/pax ($)</label><input type="number" id="cb-entry" value="80" oninput="calcCostBuilder()"></div>
           <div class="fg"><label class="lbl" data-en="Cruise total ($)" data-vi="Tổng chi phí cruise ($)">Cruise total ($)</label><input type="number" id="cb-cruise" value="720" oninput="calcCostBuilder()"></div>
-          <div class="fg"><label class="lbl" data-en="Markup %" data-vi="Markup %">Markup %</label><input type="number" id="cb-markup" value="25" oninput="calcCostBuilder()"></div>
+          <div class="fg"><label class="lbl" data-en="Markup %" data-vi="Markup %">Markup %</label><input type="number" id="cb-markup" value="30" oninput="calcCostBuilder()"></div>
         </div>
         <div id="cb-result"></div>
       </div>
@@ -1394,7 +1395,7 @@ kbd{font-family:inherit}
       <div class="card-body">
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:16px">
           <div class="fg"><label class="lbl" data-en="Net Cost (USD)" data-vi="Giá thành (USD)">Net Cost (USD)</label><input type="number" id="mc-cost" value="1500" oninput="calcMarkup()"></div>
-          <div class="fg"><label class="lbl" data-en="Markup %" data-vi="Markup %">Markup %</label><input type="number" id="mc-mu" value="25" oninput="calcMarkup()"></div>
+          <div class="fg"><label class="lbl" data-en="Markup %" data-vi="Markup %">Markup %</label><input type="number" id="mc-mu" value="30" oninput="calcMarkup()"></div>
           <div class="fg"><label class="lbl" data-en="Sell Price" data-vi="Giá bán">Sell Price</label><input id="mc-sell" readonly></div>
           <div class="fg"><label class="lbl" data-en="Gross Profit" data-vi="Lợi nhuận gộp">Gross Profit</label><input id="mc-profit" readonly></div>
         </div>
@@ -4344,6 +4345,281 @@ kbd{font-family:inherit}
 
 </div><!-- /page-medbot -->
 
+<!-- ═══════════════════ SETTINGS ═══════════════════ -->
+<!-- SECTION: SETTINGS MODULE (v1.0 — added v44) -->
+<!-- DB TABLE NEEDED: ant_settings(key, value, updated_at) — single-row config table -->
+<div class="page" id="page-settings">
+
+  <!-- Tab bar -->
+  <div style="display:flex;gap:4px;margin-bottom:18px;border-bottom:2px solid var(--b);padding-bottom:0">
+    <div class="tab on" id="stab-company"  onclick="setSettingsTab('company')"  data-en="🏢 Company Info"     data-vi="🏢 Thông tin công ty">🏢 Company Info</div>
+    <div class="tab"    id="stab-business" onclick="setSettingsTab('business')" data-en="💰 Business Rules"   data-vi="💰 Quy tắc kinh doanh">💰 Business Rules</div>
+    <div class="tab"    id="stab-users"    onclick="setSettingsTab('users')"    data-en="👥 Users &amp; Access" data-vi="👥 Người dùng &amp; Quyền">👥 Users &amp; Access</div>
+    <div class="tab"    id="stab-system"   onclick="setSettingsTab('system')"   data-en="⚙ System"           data-vi="⚙ Hệ thống">⚙ System</div>
+  </div>
+
+  <!-- ── TAB 1: COMPANY INFO ─────────────────────────────────── -->
+  <div id="settings-company">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+
+      <div class="card" style="grid-column:1/-1">
+        <div class="card-hd"><span class="card-title">🏢 Company Information</span>
+          <span style="font-size:11px;color:var(--m)" data-en="Used in invoices, PDFs and contracts" data-vi="Dùng trong hóa đơn, PDF và hợp đồng">Used in invoices, PDFs and contracts</span>
+        </div>
+        <div class="card-body" style="padding:16px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="fg"><label class="lbl" data-en="Company Name (EN)" data-vi="Tên công ty (EN)">Company Name (EN)</label><input id="st-cname-en" class="inp" placeholder="The Ant Adventures" oninput="settingsMarkDirty()"></div>
+            <div class="fg"><label class="lbl" data-en="Company Name (VN)" data-vi="Tên công ty (VN)">Company Name (VN)</label><input id="st-cname-vi" class="inp" placeholder="The Ant Adventures – Du Lịch Việt Nam" oninput="settingsMarkDirty()"></div>
+            <div class="fg" style="grid-column:1/-1"><label class="lbl" data-en="Registered Address" data-vi="Địa chỉ đăng ký">Registered Address</label><input id="st-address" class="inp" placeholder="123 Hang Bac St, Hoan Kiem, Hanoi, Vietnam" oninput="settingsMarkDirty()"></div>
+            <div class="fg"><label class="lbl" data-en="Phone" data-vi="Điện thoại">Phone</label><input id="st-phone" class="inp" placeholder="+84 24 ..." oninput="settingsMarkDirty()"></div>
+            <div class="fg"><label class="lbl" data-en="Email" data-vi="Email">Email</label><input id="st-email" class="inp" type="email" placeholder="info@theantadventures.com" oninput="settingsMarkDirty()"></div>
+            <div class="fg"><label class="lbl" data-en="Website" data-vi="Website">Website</label><input id="st-website" class="inp" placeholder="www.theantadventures.com" oninput="settingsMarkDirty()"></div>
+            <div class="fg"><label class="lbl" data-en="Tax Code (MST)" data-vi="Mã số thuế (MST)">Tax Code (MST)</label><input id="st-mst" class="inp" placeholder="01234567890" oninput="settingsMarkDirty()"></div>
+            <div class="fg"><label class="lbl" data-en="Business License No." data-vi="Số giấy phép KD">Business License No.</label><input id="st-license" class="inp" placeholder="GPLH-..." oninput="settingsMarkDirty()"></div>
+            <div class="fg"><label class="lbl" data-en="Bank Account (USD)" data-vi="Tài khoản NH (USD)">Bank Account (USD)</label><input id="st-bank-usd" class="inp" placeholder="Techcombank — USD — 19001..." oninput="settingsMarkDirty()"></div>
+            <div class="fg"><label class="lbl" data-en="Bank Account (VND)" data-vi="Tài khoản NH (VND)">Bank Account (VND)</label><input id="st-bank-vnd" class="inp" placeholder="Techcombank — VND — 19001..." oninput="settingsMarkDirty()"></div>
+          </div>
+          <div style="margin-top:14px;display:flex;gap:10px;align-items:center">
+            <button class="btn btn-p" onclick="saveSettings()">💾 Save Company Info</button>
+            <span id="st-save-msg" style="font-size:11.5px;color:var(--g);display:none">✓ Saved</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── TAB 2: BUSINESS RULES ──────────────────────────────── -->
+  <div id="settings-business" style="display:none">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+      <!-- Pricing & Markup -->
+      <div class="card">
+        <div class="card-hd"><span class="card-title">📊 Pricing & Markup</span></div>
+        <div class="card-body" style="padding:16px">
+          <div style="display:grid;gap:10px">
+            <div class="fg">
+              <label class="lbl" data-en="Default Markup %" data-vi="Markup mặc định %">Default Markup %</label>
+              <input id="st-markup" class="inp" type="number" min="0" max="100" step="1" value="30" oninput="settingsMarkDirty()" style="max-width:120px">
+              <div style="font-size:11px;color:var(--m);margin-top:4px" data-en="Applied in Cost Builder and Markup Calculator" data-vi="Áp dụng trong Cost Builder và Markup Calculator">Applied in Cost Builder and Markup Calculator</div>
+            </div>
+            <div class="fg">
+              <label class="lbl" data-en="VAT Rate %" data-vi="Thuế VAT %">VAT Rate %</label>
+              <input id="st-vat" class="inp" type="number" min="0" max="30" step="0.5" value="10" oninput="settingsMarkDirty()" style="max-width:120px">
+            </div>
+            <div class="fg">
+              <label class="lbl" data-en="Corporate Tax Rate %" data-vi="Thuế TNDN %">Corporate Tax Rate %</label>
+              <input id="st-corptax" class="inp" type="number" min="0" max="50" step="0.5" value="20" oninput="settingsMarkDirty()" style="max-width:120px">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Exchange Rates -->
+      <div class="card">
+        <div class="card-hd">
+          <span class="card-title">💱 Exchange Rates</span>
+          <span id="st-rate-updated" style="font-size:10.5px;color:var(--m)"></span>
+        </div>
+        <div class="card-body" style="padding:16px">
+          <div style="display:grid;gap:10px">
+            <div class="fg">
+              <label class="lbl">1 USD → VND</label>
+              <input id="st-usd-vnd" class="inp" type="number" min="1000" step="100" value="25400" oninput="settingsMarkDirty()" style="max-width:160px">
+            </div>
+            <div class="fg">
+              <label class="lbl">1 EUR → VND</label>
+              <input id="st-eur-vnd" class="inp" type="number" min="1000" step="100" value="27500" oninput="settingsMarkDirty()" style="max-width:160px">
+            </div>
+            <div class="fg">
+              <label class="lbl">1 EUR → USD</label>
+              <input id="st-eur-usd" class="inp" type="number" min="0.1" step="0.01" value="1.08" oninput="settingsMarkDirty()" style="max-width:160px">
+            </div>
+          </div>
+          <div style="margin-top:10px;font-size:11px;color:var(--m)" data-en="Update weekly — used across Finance, Pricing and Dashboard" data-vi="Cập nhật hàng tuần — dùng trong Tài chính, Bảng giá và Dashboard">Update weekly — used across Finance, Pricing and Dashboard</div>
+        </div>
+      </div>
+
+      <!-- B2B Commission Tiers -->
+      <div class="card">
+        <div class="card-hd"><span class="card-title">🤝 B2B Agent Commission Tiers</span></div>
+        <div class="card-body" style="padding:16px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="fg">
+              <label class="lbl">🥉 Bronze %</label>
+              <input id="st-b2b-bronze" class="inp" type="number" min="0" max="30" step="1" value="8" oninput="settingsMarkDirty()" style="max-width:100px">
+            </div>
+            <div class="fg">
+              <label class="lbl">🥈 Silver %</label>
+              <input id="st-b2b-silver" class="inp" type="number" min="0" max="30" step="1" value="12" oninput="settingsMarkDirty()" style="max-width:100px">
+            </div>
+            <div class="fg">
+              <label class="lbl">🥇 Gold %</label>
+              <input id="st-b2b-gold" class="inp" type="number" min="0" max="30" step="1" value="15" oninput="settingsMarkDirty()" style="max-width:100px">
+            </div>
+            <div class="fg">
+              <label class="lbl">💎 Platinum %</label>
+              <input id="st-b2b-platinum" class="inp" type="number" min="0" max="30" step="1" value="20" oninput="settingsMarkDirty()" style="max-width:100px">
+            </div>
+          </div>
+          <div style="margin-top:10px;font-size:11px;color:var(--m)">Virtuoso / Artisans of Leisure → Gold. Abercrombie → Platinum.</div>
+        </div>
+      </div>
+
+      <!-- Sales Policy -->
+      <div class="card">
+        <div class="card-hd"><span class="card-title">📋 Sales & Payment Policy</span></div>
+        <div class="card-body" style="padding:16px">
+          <div style="display:grid;gap:10px">
+            <div class="fg">
+              <label class="lbl" data-en="Deposit % (to confirm booking)" data-vi="Đặt cọc % (xác nhận tour)">Deposit % (to confirm booking)</label>
+              <input id="st-deposit" class="inp" type="number" min="0" max="100" step="5" value="30" oninput="settingsMarkDirty()" style="max-width:120px">
+            </div>
+            <div class="fg">
+              <label class="lbl" data-en="Balance due (days before departure)" data-vi="Thanh toán còn lại (ngày trước khởi hành)">Balance due (days before departure)</label>
+              <input id="st-balance-days" class="inp" type="number" min="0" max="90" step="1" value="30" oninput="settingsMarkDirty()" style="max-width:120px">
+            </div>
+            <div class="fg">
+              <label class="lbl" data-en="Min quote value (USD)" data-vi="Giá trị báo giá tối thiểu (USD)">Min quote value (USD)</label>
+              <input id="st-min-quote" class="inp" type="number" min="0" step="100" value="1800" oninput="settingsMarkDirty()" style="max-width:160px">
+              <div style="font-size:11px;color:var(--m);margin-top:4px">UHNW/Luxury tier minimum per person</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div style="margin-top:16px;display:flex;gap:10px;align-items:center">
+      <button class="btn btn-p" onclick="saveSettings()">💾 Save Business Rules</button>
+      <span id="st-save-msg2" style="font-size:11.5px;color:var(--g);display:none">✓ Saved</span>
+    </div>
+  </div>
+
+  <!-- ── TAB 3: USERS & ACCESS ──────────────────────────────── -->
+  <div id="settings-users" style="display:none">
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-hd"><span class="card-title">👥 User Roles & Access Control</span></div>
+      <div class="card-body" style="padding:20px">
+        <!-- BACKEND NEEDED: user_accounts(id, name, email, role, active, created_at) -->
+        <!-- BACKEND NEEDED: role_permissions(role, module, can_view, can_edit) -->
+        <div style="background:var(--blue-l);border:1px solid #90CAF9;border-radius:9px;padding:14px 16px;margin-bottom:18px;font-size:12.5px;color:#1565C0;line-height:1.6">
+          <strong>🔧 Backend Required</strong><br>
+          User authentication and role-based access control will be implemented by Mr. Tan with the production backend. The roles and permissions below are defined here for handoff reference.
+        </div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:12.5px">
+            <thead>
+              <tr style="background:var(--gl)">
+                <th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--b);color:var(--g);font-weight:700">Module</th>
+                <th style="padding:10px 12px;text-align:center;border-bottom:2px solid var(--b);color:var(--g);font-weight:700">CEO</th>
+                <th style="padding:10px 12px;text-align:center;border-bottom:2px solid var(--b);color:var(--m);font-weight:700">Sales</th>
+                <th style="padding:10px 12px;text-align:center;border-bottom:2px solid var(--b);color:var(--m);font-weight:700">Operations</th>
+                <th style="padding:10px 12px;text-align:center;border-bottom:2px solid var(--b);color:var(--m);font-weight:700">Guide</th>
+              </tr>
+            </thead>
+            <tbody id="st-roles-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hd"><span class="card-title">👤 Staff Access List</span></div>
+      <div class="card-body" style="padding:16px">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px" id="st-staff-cards"></div>
+        <div style="margin-top:14px;font-size:11.5px;color:var(--m)">
+          Staff list synced from HR module. Role assignments will be activated when backend login is deployed by Mr. Tan.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB 4: SYSTEM ──────────────────────────────────────── -->
+  <div id="settings-system" style="display:none">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+      <!-- Data Backup -->
+      <div class="card">
+        <div class="card-hd"><span class="card-title">💾 Data Backup & Restore</span></div>
+        <div class="card-body" style="padding:16px">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div>
+              <div style="font-size:12.5px;font-weight:600;margin-bottom:4px">Export Full Backup</div>
+              <div style="font-size:11.5px;color:var(--m);margin-bottom:8px">Download all CRM data as a JSON file. Keep a copy weekly.</div>
+              <button class="btn btn-p" onclick="exportAllData()">⬇ Download Backup (.json)</button>
+            </div>
+            <div style="border-top:1px solid var(--b);padding-top:10px">
+              <div style="font-size:12.5px;font-weight:600;margin-bottom:4px">Restore from Backup</div>
+              <div style="font-size:11.5px;color:var(--m);margin-bottom:8px">⚠ This will overwrite all current data.</div>
+              <button class="btn btn-s" onclick="importAllData()">⬆ Restore from File</button>
+            </div>
+            <div style="font-size:11px;color:var(--m);border-top:1px solid var(--b);padding-top:8px" id="st-last-backup-label">Last backup: checking...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Version & Info -->
+      <div class="card">
+        <div class="card-hd"><span class="card-title">ℹ️ System Information</span></div>
+        <div class="card-body" style="padding:16px">
+          <div style="display:grid;gap:8px;font-size:12.5px">
+            <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--b)">
+              <span style="color:var(--m)">CRM Version</span><span style="font-weight:700;color:var(--g)">v44</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--b)">
+              <span style="color:var(--m)">Tour Products</span><span style="font-weight:600">193 products</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--b)">
+              <span style="color:var(--m)">Storage Used</span><span style="font-weight:600" id="st-storage-size">Calculating...</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--b)">
+              <span style="color:var(--m)">Developer</span><span style="font-weight:600">Mr. Tan (Mitel AI)</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:7px 0">
+              <span style="color:var(--m)">Product Owner</span><span style="font-weight:600">Tai Pham</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Appearance (moved from sidebar) -->
+      <div class="card">
+        <div class="card-hd"><span class="card-title">🎨 Appearance</span></div>
+        <div class="card-body" style="padding:16px">
+          <div style="font-size:12px;color:var(--m);margin-bottom:10px">Sidebar theme can also be changed from the sidebar panel below the navigation.</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button onclick="applyTheme('forest')"    class="btn btn-s btn-sm" style="background:#2E7D52;color:#fff;border-color:#2E7D52">🌿 Forest</button>
+            <button onclick="applyTheme('midnight')"  class="btn btn-s btn-sm" style="background:#1e293b;color:#fff;border-color:#1e293b">🌙 Midnight</button>
+            <button onclick="applyTheme('obsidian')"  class="btn btn-s btn-sm" style="background:#3f3f46;color:#fff;border-color:#3f3f46">🖤 Obsidian</button>
+            <button onclick="applyTheme('terracotta')"class="btn btn-s btn-sm" style="background:#9a3412;color:#fff;border-color:#9a3412">🏺 Terracotta</button>
+            <button onclick="applyTheme('royal')"     class="btn btn-s btn-sm" style="background:#1e3a8a;color:#fff;border-color:#1e3a8a">👑 Royal</button>
+          </div>
+          <div style="margin-top:12px;font-size:12px;color:var(--m)">Language</div>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <button onclick="setLang('en')" class="btn btn-s btn-sm">🇬🇧 English</button>
+            <button onclick="setLang('vi')" class="btn btn-s btn-sm">🇻🇳 Tiếng Việt</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Danger Zone -->
+      <div class="card" style="border:1px solid #FECACA">
+        <div class="card-hd" style="background:#FEF2F2"><span class="card-title" style="color:var(--red)">⚠ Danger Zone</span></div>
+        <div class="card-body" style="padding:16px">
+          <div style="font-size:12.5px;color:var(--t);margin-bottom:10px">These actions cannot be undone. Always backup first.</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button class="btn" style="background:var(--red-l);color:var(--red);border-color:#FECACA;font-weight:600" onclick="stResetModule()">🗑 Reset a Module's Data...</button>
+            <button class="btn" style="background:var(--red-l);color:var(--red);border-color:#FECACA;font-weight:600" onclick="stResetAll()">💥 Reset ALL CRM Data (Factory Reset)</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /page-settings -->
+
+
   </div><!-- /content -->
 </div><!-- /main -->
 </div><!-- /app -->
@@ -5284,7 +5560,7 @@ function persist() {
 const DUR_LABELS = {'0.5':'Half Day','1':'Full Day','2':'2D1N','3':'3D2N','4':'4D3N'};
 const REGIONS = {north:'Northern VN',central:'Central VN',south:'Southern VN',full:'Full Route'};
 const REG_COLORS = {north:['#E8F5EE','#1a5c38'],central:['#FFF3CD','#856404'],south:['#E1F0FF','#0c5464'],full:['#F3E5F5','#4a1460']};
-const PAGE_TITLES = {dashboard:'Dashboard',planner:'Daily Planner',customers:'Clients',sales:'Sales Pipeline',tourdesign:'Tour Design Studio ✦',products:'Tour Products',gallery:'Photo Gallery',pricing:'Pricing',bookings:'Bookings',suppliers:'Suppliers',guides:'Guides',weather:'Weather Guide',attractions:'Attraction Schedule 🏛',posttour:'Post-Tour & Feedback ⭐',finance:'Finance',tax:'Tax',salary:'Salary',about:'About Us',culture:'Culture',regulations:'Regulations',hr:'Human Resources',training:'Staff Training Academy 🎓',ai:'AI Requirements ⚡',devnotes:'Dev Notes 📝',teamchat:'Team Chat 💬',medbot:'🤖 MedBot – Bot Báo Cáo'};
+const PAGE_TITLES = {dashboard:'Dashboard',planner:'Daily Planner',customers:'Clients',sales:'Sales Pipeline',tourdesign:'Tour Design Studio ✦',products:'Tour Products',gallery:'Photo Gallery',pricing:'Pricing',bookings:'Bookings',suppliers:'Suppliers',guides:'Guides',weather:'Weather Guide',attractions:'Attraction Schedule 🏛',posttour:'Post-Tour & Feedback ⭐',finance:'Finance',tax:'Tax',salary:'Salary',about:'About Us',culture:'Culture',regulations:'Regulations',hr:'Human Resources',training:'Staff Training Academy 🎓',ai:'AI Requirements ⚡',devnotes:'Dev Notes 📝',teamchat:'Team Chat 💬',medbot:'🤖 MedBot – Bot Báo Cáo',settings:'⚙ Settings — Cài đặt hệ thống'};
 const STAGE_COLORS = {Inquiry:'bdg-b',Designing:'bdg-a',Quoted:'bdg-a',Negotiation:'bdg-a',Confirmed:'bdg-g',Completed:'bdg-w',Lost:'bdg-r'};
 const STAGE_PROB    = {Inquiry:10, Designing:25, Quoted:50, Negotiation:70, Confirmed:95, Completed:100, Lost:0};
 const SRC_COLORS = {Referral:'bdg-g',Website:'bdg-b',Agent:'bdg-a',Virtuoso:'bdg-p',Abercrombie:'bdg-p'};
@@ -5350,6 +5626,7 @@ function nav(page, el) {
   if (page === 'medbot')    mbInit();
   if (page === 'planner')  { renderPlanner(); }
   if (page === 'guides')   renderGuides();
+  if (page === 'settings') { loadSettingsIntoForm(); setSettingsTab('company'); }
   // Sync topbar title with current language
   const _tb = document.getElementById('tb-title');
   if (_tb && typeof currentLang !== 'undefined' && typeof VI_LABELS !== 'undefined') {
@@ -11297,11 +11574,14 @@ function renderPlannerGrid() {
 </td>`;
       }
 
-      // ── Col 2: Task title ─────────────────────────────────────
+      // ── Col 2: Task title (with MedBot badge if auto-generated) ─────────
+      const mbBadge = t.source === 'medbot'
+        ? `<span style="background:#075E54;color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;letter-spacing:.4px;white-space:nowrap;margin-left:6px">🤖 MedBot</span>`
+        : '';
       tbl += `<td style="padding:11px 14px;background:${rowBg};border-bottom:${borderB};border-right:1px solid var(--b)">
   <div style="display:flex;align-items:flex-start;gap:8px">
     <div style="width:3px;min-height:20px;align-self:stretch;background:${pHex};border-radius:2px;flex-shrink:0"></div>
-    <div style="font-size:12.5px;font-weight:600;color:var(--t);line-height:1.45">${t.title || '—'}</div>
+    <div style="font-size:12.5px;font-weight:600;color:var(--t);line-height:1.45">${t.title || '—'}${mbBadge}</div>
   </div>
 </td>`;
 
@@ -11467,9 +11747,10 @@ function renderTodayTasks(ds, teamF) {
     const statusOpts = Object.entries(TASK_STATUS).map(([k,v]) => `<option value="${k}" ${k===t.status?'selected':''}>${v.label}</option>`).join('');
     return `<div style="padding:13px 16px;border-bottom:1px solid var(--b);display:flex;gap:12px;align-items:flex-start">
       <div style="flex:1">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
           <span>${PRIORITY_DOTS[t.priority]}</span>
           <span style="font-size:13px;font-weight:600;${t.status==='done'?'text-decoration:line-through;color:var(--m)':''}">${t.title}</span>
+          ${t.source==='medbot' ? `<span style="background:#075E54;color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;letter-spacing:.4px">🤖 MedBot</span>` : ''}
         </div>
         <div style="font-size:11.5px;color:var(--m)">${t.assignee} · ${t.dept}${t.notes?' · '+t.notes.substring(0,50)+(t.notes.length>50?'...':''):''}</div>
       </div>
@@ -18866,9 +19147,61 @@ function mbSubmitReport() {
   MB_REPORTS.push(report);
   mbSave();
 
+  // ── AUTO-LINK: MedBot "tomorrow" → Daily Planner tasks ──────────────────
+  // When a staff member submits their tomorrow plan, auto-create Planner tasks
+  // for the next day so the CEO sees all plans in the Daily Planner grid.
+  // BACKEND NEEDED: replace TASKS localStorage sync with API call to create tasks in DB
+  if (report.tomorrow && report.tomorrow.trim()) {
+    const tmrDate = new Date();
+    tmrDate.setDate(tmrDate.getDate() + 1);
+    const tmrStr = tmrDate.toISOString().split('T')[0];
+
+    // Remove any previous MedBot-generated tasks for this person for tomorrow (avoid duplicates on re-submit)
+    TASKS = TASKS.filter(t => !(t.source === 'medbot' && t.assignee === staff.name && t.date === tmrStr));
+
+    // Split multi-item plans: first try newlines, then commas/semicolons
+    let items = report.tomorrow.split(/\n/).map(s => s.trim()).filter(Boolean);
+    if (items.length === 1) {
+      const byComma = report.tomorrow.split(/[,;،،]/).map(s => s.trim()).filter(s => s.length > 4);
+      if (byComma.length > 1) items = byComma;
+    }
+    items = items.slice(0, 5); // max 5 tasks per submission
+
+    // Detect department hint from task text
+    function mbGuessDept(txt) {
+      const t = txt.toLowerCase();
+      if (/proposal|quote|báo giá|khách|client|lead|sale/.test(t))      return 'Sales';
+      if (/invoice|hóa đơn|thanh toán|payment|finance|kế toán/.test(t)) return 'Finance';
+      if (/booking|guide|supplier|hướng dẫn|nhà cung cấp/.test(t))      return 'Operations';
+      if (/instagram|post|content|marketing|social/.test(t))             return 'Marketing';
+      return 'Operations';
+    }
+
+    items.forEach((item, idx) => {
+      const title = item.length > 90 ? item.substring(0, 87) + '…' : item;
+      TASKS.push({
+        id:       'MB-' + Date.now() + '-' + idx,
+        title:    title,
+        assignee: staff.name,
+        date:     tmrStr,
+        priority: 'medium',
+        dept:     mbGuessDept(item),
+        status:   'todo',
+        notes:    '📋 Auto từ MedBot · báo cáo ' + report.date,
+        source:   'medbot',   // flag so we can identify & deduplicate
+      });
+    });
+
+    persistTasks();
+  }
+  // ── END AUTO-LINK ─────────────────────────────────────────────────────────
+
   // Confirmation message
   const stars = '⭐'.repeat(report.rating);
-  mbBotMessage('✅ Cảm ơn ' + staff.name.split(' ').pop() + '! Báo cáo đã được lưu.\n\n📊 Tóm tắt hôm nay:\n• Đơn hàng: ' + report.orders + '\n• Báo giá: ' + report.quotes + '\n• Khách mới: ' + report.newClients + '\n• Tự đánh giá: ' + stars + '\n\nChờ các bạn khác báo cáo nốt nhé 💪');
+  const plannerNote = report.tomorrow
+    ? '\n📅 Kế hoạch ngày mai đã được ghi vào Daily Planner tự động.'
+    : '';
+  mbBotMessage('✅ Cảm ơn ' + staff.name.split(' ').pop() + '! Báo cáo đã được lưu.\n\n📊 Tóm tắt hôm nay:\n• Đơn hàng: ' + report.orders + '\n• Báo giá: ' + report.quotes + '\n• Khách mới: ' + report.newClients + '\n• Tự đánh giá: ' + stars + plannerNote + '\n\nChờ các bạn khác báo cáo nốt nhé 💪');
 
   // Hide input
   const inputArea = document.getElementById('mb-input-area');
@@ -19081,6 +19414,296 @@ function mbClearTodayReports() {
   mbRefreshDashboard();
   mbCloseAdmin();
 }
+
+// ── END MEDBOT ─────────────────────────────────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════════
+// SECTION: SETTINGS MODULE (v1.0 — added v44)
+// ══════════════════════════════════════════════════════════════════
+// DB TABLE NEEDED: ant_settings(key VARCHAR, value TEXT, updated_at DATETIME)
+// BACKEND NEEDED: GET /api/settings, POST /api/settings — CEO role only
+
+const SETTINGS_DEFAULT = {
+  // Company Info
+  companyNameEN:  'The Ant Adventures',
+  companyNameVN:  'The Ant Adventures – Du Lịch Việt Nam',
+  address:        '',
+  phone:          '',
+  email:          'info@theantadventures.com',
+  website:        'www.theantadventures.com',
+  mst:            '',
+  license:        '',
+  bankUSD:        '',
+  bankVND:        '',
+  // Business Rules
+  markup:         30,
+  vat:            10,
+  corpTax:        20,
+  usdToVnd:       25400,
+  eurToVnd:       27500,
+  eurToUsd:       1.08,
+  b2bBronze:      8,
+  b2bSilver:      12,
+  b2bGold:        15,
+  b2bPlatinum:    20,
+  deposit:        30,
+  balanceDays:    30,
+  minQuote:       1800,
+};
+
+let ANT_SETTINGS = LS.get('ant_settings_v1', SETTINGS_DEFAULT);
+
+// ── Role-module permission matrix ─────────────────────────────────
+const ROLE_MATRIX = [
+  {module:'Dashboard',    ceo:'✅ Full',  sales:'👁 View',  ops:'👁 View',  guide:'—'},
+  {module:'Daily Planner',ceo:'✅ Full',  sales:'✅ Full',  ops:'✅ Full',  guide:'—'},
+  {module:'Clients',      ceo:'✅ Full',  sales:'✅ Full',  ops:'👁 View',  guide:'—'},
+  {module:'Sales Pipeline',ceo:'✅ Full', sales:'✅ Full',  ops:'—',        guide:'—'},
+  {module:'Tour Design',  ceo:'✅ Full',  sales:'✅ Full',  ops:'👁 View',  guide:'—'},
+  {module:'Tour Products',ceo:'✅ Full',  sales:'👁 View',  ops:'👁 View',  guide:'—'},
+  {module:'Pricing',      ceo:'✅ Full',  sales:'✅ Full',  ops:'—',        guide:'—'},
+  {module:'Bookings',     ceo:'✅ Full',  sales:'👁 View',  ops:'✅ Full',  guide:'👁 Own'},
+  {module:'Suppliers',    ceo:'✅ Full',  sales:'—',        ops:'✅ Full',  guide:'—'},
+  {module:'Guides',       ceo:'✅ Full',  sales:'👁 View',  ops:'✅ Full',  guide:'👁 Own'},
+  {module:'Finance',      ceo:'✅ Full',  sales:'—',        ops:'—',        guide:'—'},
+  {module:'Tax',          ceo:'✅ Full',  sales:'—',        ops:'—',        guide:'—'},
+  {module:'Salary',       ceo:'✅ Full',  sales:'—',        ops:'—',        guide:'—'},
+  {module:'HR',           ceo:'✅ Full',  sales:'—',        ops:'👁 View',  guide:'—'},
+  {module:'MedBot Report',ceo:'✅ Full',  sales:'✅ Submit', ops:'✅ Submit', guide:'—'},
+  {module:'Settings',     ceo:'✅ Full',  sales:'—',        ops:'—',        guide:'—'},
+];
+
+function getSettings() { return ANT_SETTINGS; }
+
+function settingsMarkDirty() {
+  // Could show unsaved indicator — currently just enables save
+}
+
+function saveSettings() {
+  ANT_SETTINGS = {
+    companyNameEN: document.getElementById('st-cname-en')?.value  || ANT_SETTINGS.companyNameEN,
+    companyNameVN: document.getElementById('st-cname-vi')?.value  || ANT_SETTINGS.companyNameVN,
+    address:       document.getElementById('st-address')?.value   || ANT_SETTINGS.address,
+    phone:         document.getElementById('st-phone')?.value     || ANT_SETTINGS.phone,
+    email:         document.getElementById('st-email')?.value     || ANT_SETTINGS.email,
+    website:       document.getElementById('st-website')?.value   || ANT_SETTINGS.website,
+    mst:           document.getElementById('st-mst')?.value       || ANT_SETTINGS.mst,
+    license:       document.getElementById('st-license')?.value   || ANT_SETTINGS.license,
+    bankUSD:       document.getElementById('st-bank-usd')?.value  || ANT_SETTINGS.bankUSD,
+    bankVND:       document.getElementById('st-bank-vnd')?.value  || ANT_SETTINGS.bankVND,
+    markup:        parseFloat(document.getElementById('st-markup')?.value)      || ANT_SETTINGS.markup,
+    vat:           parseFloat(document.getElementById('st-vat')?.value)         || ANT_SETTINGS.vat,
+    corpTax:       parseFloat(document.getElementById('st-corptax')?.value)     || ANT_SETTINGS.corpTax,
+    usdToVnd:      parseFloat(document.getElementById('st-usd-vnd')?.value)     || ANT_SETTINGS.usdToVnd,
+    eurToVnd:      parseFloat(document.getElementById('st-eur-vnd')?.value)     || ANT_SETTINGS.eurToVnd,
+    eurToUsd:      parseFloat(document.getElementById('st-eur-usd')?.value)     || ANT_SETTINGS.eurToUsd,
+    b2bBronze:     parseFloat(document.getElementById('st-b2b-bronze')?.value)  || ANT_SETTINGS.b2bBronze,
+    b2bSilver:     parseFloat(document.getElementById('st-b2b-silver')?.value)  || ANT_SETTINGS.b2bSilver,
+    b2bGold:       parseFloat(document.getElementById('st-b2b-gold')?.value)    || ANT_SETTINGS.b2bGold,
+    b2bPlatinum:   parseFloat(document.getElementById('st-b2b-platinum')?.value)|| ANT_SETTINGS.b2bPlatinum,
+    deposit:       parseFloat(document.getElementById('st-deposit')?.value)     || ANT_SETTINGS.deposit,
+    balanceDays:   parseFloat(document.getElementById('st-balance-days')?.value)|| ANT_SETTINGS.balanceDays,
+    minQuote:      parseFloat(document.getElementById('st-min-quote')?.value)   || ANT_SETTINGS.minQuote,
+  };
+  LS.set('ant_settings_v1', ANT_SETTINGS);
+
+  // ── Apply markup to Cost Builder and Markup Calculator immediately ──
+  const cbMarkup = document.getElementById('cb-markup');
+  const mcMu     = document.getElementById('mc-mu');
+  if (cbMarkup) { cbMarkup.value = ANT_SETTINGS.markup; if (typeof calcCostBuilder === 'function') calcCostBuilder(); }
+  if (mcMu)     { mcMu.value     = ANT_SETTINGS.markup; if (typeof calcMarkup      === 'function') calcMarkup(); }
+
+  // ── Show saved confirmation ──
+  ['st-save-msg','st-save-msg2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.display = 'inline'; setTimeout(() => el.style.display = 'none', 2500); }
+  });
+
+  // Update rate timestamp
+  const rateEl = document.getElementById('st-rate-updated');
+  if (rateEl) rateEl.textContent = 'Updated ' + new Date().toLocaleDateString('en',{day:'numeric',month:'short',year:'numeric'});
+  LS.set('ant_settings_rate_ts', new Date().toISOString());
+}
+
+function loadSettingsIntoForm() {
+  const s = ANT_SETTINGS;
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+  set('st-cname-en',    s.companyNameEN);
+  set('st-cname-vi',    s.companyNameVN);
+  set('st-address',     s.address);
+  set('st-phone',       s.phone);
+  set('st-email',       s.email);
+  set('st-website',     s.website);
+  set('st-mst',         s.mst);
+  set('st-license',     s.license);
+  set('st-bank-usd',    s.bankUSD);
+  set('st-bank-vnd',    s.bankVND);
+  set('st-markup',      s.markup);
+  set('st-vat',         s.vat);
+  set('st-corptax',     s.corpTax);
+  set('st-usd-vnd',     s.usdToVnd);
+  set('st-eur-vnd',     s.eurToVnd);
+  set('st-eur-usd',     s.eurToUsd);
+  set('st-b2b-bronze',  s.b2bBronze);
+  set('st-b2b-silver',  s.b2bSilver);
+  set('st-b2b-gold',    s.b2bGold);
+  set('st-b2b-platinum',s.b2bPlatinum);
+  set('st-deposit',     s.deposit);
+  set('st-balance-days',s.balanceDays);
+  set('st-min-quote',   s.minQuote);
+
+  // Rate timestamp
+  const ts = LS.get('ant_settings_rate_ts', null);
+  const rateEl = document.getElementById('st-rate-updated');
+  if (rateEl && ts) rateEl.textContent = 'Updated ' + new Date(ts).toLocaleDateString('en',{day:'numeric',month:'short',year:'numeric'});
+
+  // Storage size
+  const storEl = document.getElementById('st-storage-size');
+  if (storEl) {
+    try {
+      let total = 0;
+      for (let k in localStorage) { if (localStorage.hasOwnProperty(k)) total += (localStorage[k].length + k.length) * 2; }
+      storEl.textContent = total > 1024*1024 ? (total/1024/1024).toFixed(2)+' MB' : (total/1024).toFixed(1)+' KB';
+    } catch { storEl.textContent = 'N/A'; }
+  }
+
+  // Last backup label
+  const lbEl = document.getElementById('st-last-backup-label');
+  if (lbEl) {
+    const lbTs = LS.get('ant_last_backup', null);
+    lbEl.textContent = lbTs
+      ? 'Last backup: ' + new Date(lbTs).toLocaleString('en',{dateStyle:'medium',timeStyle:'short'})
+      : 'Last backup: never';
+  }
+
+  renderSettingsRoleMatrix();
+  renderSettingsStaffCards();
+}
+
+function renderSettingsRoleMatrix() {
+  const tbody = document.getElementById('st-roles-tbody');
+  if (!tbody) return;
+  const colStyle = (val) => {
+    if (val === '✅ Full')   return 'color:#1a5c38;font-weight:700';
+    if (val.startsWith('✅')) return 'color:#1a5c38;font-weight:600';
+    if (val.startsWith('👁')) return 'color:#1565C0;font-weight:500';
+    if (val === '—')          return 'color:#ccc';
+    return 'color:var(--m)';
+  };
+  tbody.innerHTML = ROLE_MATRIX.map((r, i) => `
+    <tr style="background:${i%2===0?'var(--s)':'var(--bg)'}">
+      <td style="padding:9px 12px;font-weight:500;font-size:12px">${r.module}</td>
+      <td style="padding:9px 12px;text-align:center;font-size:12px;${colStyle(r.ceo)}">${r.ceo}</td>
+      <td style="padding:9px 12px;text-align:center;font-size:12px;${colStyle(r.sales)}">${r.sales}</td>
+      <td style="padding:9px 12px;text-align:center;font-size:12px;${colStyle(r.ops)}">${r.ops}</td>
+      <td style="padding:9px 12px;text-align:center;font-size:12px;${colStyle(r.guide)}">${r.guide}</td>
+    </tr>`).join('');
+}
+
+function renderSettingsStaffCards() {
+  const el = document.getElementById('st-staff-cards');
+  if (!el) return;
+  const staff = LS.get('ant_staff_v3', []);
+  if (!staff.length) {
+    el.innerHTML = '<div style="color:var(--m);font-size:12.5px;grid-column:1/-1">No staff found. Add staff in the HR module first.</div>';
+    return;
+  }
+  const ini = n => (n||'?').split(' ').map(w=>w[0]||'').join('').substring(0,2).toUpperCase();
+  const ROLE_OPTS = ['CEO','Sales','Operations','Guide'];
+  el.innerHTML = staff.map(s => `
+    <div style="border:1px solid var(--b);border-radius:9px;padding:12px;display:flex;flex-direction:column;gap:7px;background:var(--s)">
+      <div style="display:flex;align-items:center;gap:9px">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--gl);border:2px solid var(--g);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--g);flex-shrink:0">${ini(s.name||s.fullname)}</div>
+        <div>
+          <div style="font-size:12.5px;font-weight:600">${s.name||s.fullname||'—'}</div>
+          <div style="font-size:11px;color:var(--m)">${s.dept||s.department||'—'}</div>
+        </div>
+      </div>
+      <select style="width:100%;padding:5px 8px;border:1px solid var(--b);border-radius:6px;font-family:inherit;font-size:11.5px;color:var(--m)" title="Role (active after backend login)">
+        ${ROLE_OPTS.map(r=>`<option ${r==='CEO'&&(s.name||'').includes('Tai')?'selected':''} value="${r}">${r}</option>`).join('')}
+      </select>
+      <div style="font-size:10px;color:var(--m);text-align:center">Role active after backend deployment</div>
+    </div>`).join('');
+}
+
+function setSettingsTab(tab) {
+  ['company','business','users','system'].forEach(t => {
+    const panel = document.getElementById('settings-' + t);
+    const btn   = document.getElementById('stab-' + t);
+    if (panel) panel.style.display = t === tab ? '' : 'none';
+    if (btn)   btn.classList.toggle('on', t === tab);
+  });
+  if (tab === 'system' || tab === 'users') renderSettingsStaffCards();
+  if (tab === 'system') {
+    // refresh storage size
+    const storEl = document.getElementById('st-storage-size');
+    if (storEl) {
+      try {
+        let total = 0;
+        for (let k in localStorage) { if (localStorage.hasOwnProperty(k)) total += (localStorage[k].length + k.length) * 2; }
+        storEl.textContent = total > 1024*1024 ? (total/1024/1024).toFixed(2)+' MB' : (total/1024).toFixed(1)+' KB';
+      } catch { storEl.textContent = 'N/A'; }
+    }
+  }
+}
+
+function stResetModule() {
+  const modules = [
+    {label:'Clients (ant_leads_v3)',       key:'ant_leads_v3'},
+    {label:'Sales Pipeline (ant_leads_v3)',key:'ant_leads_v3'},
+    {label:'Bookings (ant_bookings_v3)',   key:'ant_bookings_v3'},
+    {label:'Suppliers (ant_suppliers_v3)', key:'ant_suppliers_v3'},
+    {label:'Guides (ant_guides_v3)',        key:'ant_guides_v3'},
+    {label:'Tasks/Planner (ant_tasks_v3)', key:'ant_tasks_v3'},
+    {label:'Finance (ant_finance_v2)',      key:'ant_finance_v2'},
+    {label:'MedBot Reports',               key:'ant_medbot_reports'},
+    {label:'Settings (ant_settings_v1)',   key:'ant_settings_v1'},
+  ];
+  const choice = prompt('Which module to reset?\n\n' + modules.map((m,i)=>`${i+1}. ${m.label}`).join('\n') + '\n\nEnter the number:');
+  const idx = parseInt(choice) - 1;
+  if (isNaN(idx) || idx < 0 || idx >= modules.length) return;
+  const m = modules[idx];
+  if (!confirm(`⚠ Reset "${m.label}"?\n\nThis will delete all data in this module. This cannot be undone.`)) return;
+  localStorage.removeItem(m.key);
+  alert('✓ "' + m.label + '" has been reset. Reload the page to see changes.');
+}
+
+function stResetAll() {
+  if (!confirm('⚠ FACTORY RESET\n\nThis will delete ALL CRM data including clients, bookings, finance, guides, staff, tasks, and settings.\n\nThis CANNOT be undone. Make sure you have a backup!\n\nAre you absolutely sure?')) return;
+  if (!confirm('Last chance — type OK to confirm factory reset.')) return;
+  const keysToKeep = ['ant_theme','ant_lang'];
+  const allKeys = Object.keys(localStorage);
+  allKeys.forEach(k => { if (!keysToKeep.includes(k)) localStorage.removeItem(k); });
+  alert('✓ Factory reset complete. The page will now reload.');
+  location.reload();
+}
+
+// ── Wire settings on page load ──────────────────────────────────
+(function initSettings() {
+  // Apply saved markup to Cost Builder inputs on page init
+  const s = ANT_SETTINGS;
+  const cbMarkup = document.getElementById('cb-markup');
+  const mcMu     = document.getElementById('mc-mu');
+  if (cbMarkup && s.markup) cbMarkup.value = s.markup;
+  if (mcMu     && s.markup) mcMu.value     = s.markup;
+})();
+
+// ── Load settings form when Settings page is opened ─────────────
+// Hooked into the existing navTo / showPage system
+const _origShowPage = window.showPage;
+document.addEventListener('DOMContentLoaded', () => {
+  // Patch: when settings page opens, populate the form
+  const observer = new MutationObserver(() => {
+    const pg = document.getElementById('page-settings');
+    if (pg && pg.style.display !== 'none' && pg.style.display !== '') {
+      loadSettingsIntoForm();
+    }
+  });
+  const pg = document.getElementById('page-settings');
+  if (pg) observer.observe(pg, { attributes: true, attributeFilter: ['style'] });
+});
+
+// ── END SETTINGS ────────────────────────────────────────────────
 
 // ── END MEDBOT ─────────────────────────────────────────────────────────────
 
